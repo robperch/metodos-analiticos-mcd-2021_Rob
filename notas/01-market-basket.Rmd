@@ -308,6 +308,8 @@ Sea $s$ un nivel de soporte mínimo fijo.
 itemsets frecuentes.
 - Equivalentemente, si algún subconjunto de un itemset no es frecuente, entonces el itemset no puede ser frecuente. Así que *a priori*, no es necesario examinar o contar itemsets que contienen al menos un subconjunto 
 que no sea frecuente.
+  - Por ejemplo,
+  
 ```
 
 Este hecho, junto con la selección de un soporte mínimo para los itemsets frecuentes,
