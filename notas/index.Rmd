@@ -18,23 +18,39 @@ Este curso trata sobre diversas técnicas de análisis de datos, en su mayoría 
 para escalar a datos grandes. El enfoque del curso se concentra más en el entendimiento y 
 aplicación de los algoritmos y los métodos, y menos en las herramientas para implementarlos. 
 
+- Vamos a usar Spark en este curso.
+    - Python está mejor integrado que R pero R también funciona bien.
+
 ## Temario {-}
 
-1. Análisis de conjuntos frecuentes
+1. Análisis de conjuntos frecuentes (qué tipo de cosas se suelen comprar juntas?)
     - Algoritmo a-priori
     - Market basket analysis
 2. Búsqueda de elementos similares 1
     - Minhashing para documentos
+    - Otras notas
+        - Pinterest no te quiere estar recomendando lo mismo
+        - No hay que repetir el post 
+        - ¿Cómo encuentras los datos similares? 
+        - Se trata de clustering pero con datos enornes; 
+        - Se usa hashing que es una técnica base de las ciencias de la computación
+            - Esta es una técnica muy rápida y escalable
 3. Búsqueda de elementos similares 2
     - Locality Sensitive Hashing (LSH)
+    - Otras notas
+        - 
 4. Aplicaciones de LSH
     - Joins de similitud aproximados 
 5. Conteo probabilístico
     - Algoritmo de Flajolet-Martin
     - Hyperloglog
+    - Otras notas
+        - Pudes ver elementos únicos.
 6. Sistemas de recomendación 1
     - Recomendación por contenido y filtros colaborativos
     - Factorización de matrices y Dimensiones latentes
+    - Otras notas
+        - Sistemas como los de Netflix o Spotify
 7. Reducción de dimensionalidad
     - Descomposición en valores singulares
     - Componentes principales
@@ -46,6 +62,8 @@ aplicación de los algoritmos y los métodos, y menos en las herramientas para i
     - Sistemas para retroalimentación implícita
 9. Análisis de redes 1
     - Medidas de centralidad y pagerank
+    - Otras notas
+        - Para atacar preguntas como ¿Quién sigue a quién?
 10. Análisis de redes 2
     - Clustering y comunidades
 11. Modelos de lenguaje 1
@@ -67,6 +85,13 @@ aplicación de los algoritmos y los métodos, y menos en las herramientas para i
     - Experimentación y contrafactuales
     - Algoritmos de tragamonedas
     - Tragamonedas bayesianos
+    
+- Explicación macro de los temas:
+    - Similitud
+    - Como contar y agrupar eficientemente
+    - Sisteas de recomendación
+    - Análisis de redes
+    - Análisis de texto y lenguaje
 
 - Las notas del curso están R, y en algunos casos usamos python o línea de comandos. Puedes usar python también para hacer tareas y ejercicios. 
 
