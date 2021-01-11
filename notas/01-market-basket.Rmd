@@ -60,6 +60,8 @@ num_items <- sapply(lista_mb, length)
 sprintf("Promedio de artículos por canasta: %.3f", mean(num_items))
 qplot(num_items, binwidth=1)  
 ```
+- Aquí podemos ver la mayoría de las transacciones son de pocos artículos.
+- Esta tienda podría ser como un super pequeño
 
 Podemos hacer una tabla con las canastas y
 examinar los artículos más frecuentes:
@@ -82,9 +84,13 @@ articulos_frec <- canastas_nest %>%
     arrange(desc(n))
 DT::datatable(articulos_frec %>%
     mutate_if(is.numeric, ~ round(.x, 3)))
+```
+```{r}
 qplot(articulos_frec$prop, binwidth = 0.01) + 
     xlab("Proporción de canastas") + ylab("Número de artículos")
 ```
+- Podemos ver que hay algunos pocos artículos que ocurren mucho.
+
 
 Y vemos que hay algunos pocos artículos que ocurren a tasas muy altas en 
 las canastas. La mayoría tiene tasas de ocurrencia baja, y muchos ocurren en una
@@ -107,6 +113,8 @@ canastas_conteo <- canastas_nest %>%
                 arrange(desc(n))
 nrow(canastas_conteo)
 ```
+- La mayor parte de las canastas están muy dispersas.
+
 
 Y aquí vemos las canastas más frecuentes:
 
@@ -114,6 +122,14 @@ Y aquí vemos las canastas más frecuentes:
 DT::datatable(canastas_conteo %>% head(n = 100) %>%
     mutate_if(is.numeric, ~ round(.x, 4)))
 ```
+
+- Este análisis no nos es tan útil porque todos los elementos están muy dispersos.
+  - Un punto interesante es que el 2.6% los tickets son sólo de cerveza.
+- Para calcular el número de canastas posibles, calcularíamos:
+```{r}
+2^169
+```
+- Podemos ver que es un número gigantesco
 
 Hay algunas canastas (principalmente canastas que contienen solo
 un artículo) que aparecen con frecuencia considerable (alrededor de $1\%$ o $2\%$), 
@@ -159,6 +175,7 @@ Sea $s\in (0,1)$. Para este valor fijo $s$, decimos que un conjunto de artículo
 
 #### Ejercicio {-}
 Considera las canastas {1,2,3}, {1,2}, {2,4}, {2,3}. ¿Cuáles son los itemsets frecuentes de soporte > 0.4?
+- En este caso los conjuntos frecuentes serían: {1}, {2}, {3}, {1, 2}, {2, 3}
 
 
 #### Ejemplo {-}
@@ -230,6 +247,8 @@ itemsets frecuentes de cualquier orden.
 #### Ejemplo {-}
 Si reducimos el soporte a $0.0001$ (que implica prácticamente que queremos contar todos
 los itemsets que ocurren), obtenemos:
+- Aquí practicamente estamos diciendo que queremos ver todos los sub-conjuntos.
+- Hay que considerar que este es un set de datos de juego. 
 
 ```{r gigante}
 pars_2 <- list(supp = 0.0001, target='frequent itemsets', maxtime = 0, maxlen = 6)
@@ -244,6 +263,12 @@ length(ap_todos)
 ```
 
 que es órdenes de magnitud más grande que el conjunto de todas las transacciones. 
+
+- Nos damos cuenta de que:
+  - Si queremos hacer conteo de las subcanastas y después filtrar, va a ser super super ineficiente. No es factible.
+- La pregunta es ¿Por qué queremos contar todo?
+  - No necesito ver los subconjuntos que aparecen pocas veces.
+  - Hay que notar que cuando modificamos nuestro soporte y lo subimos, bajó mucho el número de resultados (333)
 
 En este ejemplo chico, el cálculo de esta colección (hasta canastas de tamaño 6) 
 puede requiere menos de unos 4Gb de memoria (8Gb no son suficientes para encontrar 
