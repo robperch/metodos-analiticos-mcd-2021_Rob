@@ -1259,6 +1259,16 @@ de la siguiente clase**. Acerca de los datos: Cada receta es una canasta, y los
 artículos son los ingredientes que usan. Puedes consultar el artículo
 original [aquí](https://www.nature.com/articles/srep00196.pdf).
 
+```{r}
+
+d_srep <- read.csv("../datos/recetas/srep00196-s3.csv")
+
+d_srep %>%
+  filter(region == "EastAsian")
+
+```
+
+
 2. Haz algunos experimentos el ejemplo \@ref(ejemplo-canastas) que vimos
 en clase: incrementa/decrementa hyperlift, incrementa/decrementa 
 soporte. ¿Qué pasa con las gráficas resultantes y el número de reglas?
