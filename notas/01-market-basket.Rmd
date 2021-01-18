@@ -1258,13 +1258,41 @@ estés utilizando). Calcula la frecuencia de todos los artículos (ingredientes)
 de la siguiente clase**. Acerca de los datos: Cada receta es una canasta, y los
 artículos son los ingredientes que usan. Puedes consultar el artículo
 original [aquí](https://www.nature.com/articles/srep00196.pdf).
+- Para sacar los ingredientes más frecuentes se puede hacer un melt.
+  - Después se puede hacer un group by
 
 ```{r}
 
-d_srep <- read.csv("../datos/recetas/srep00196-s3.csv")
+d_srep <- read.csv("../datos/recetas/srep00196-s3.csv") 
+## Hay que notar que obtenemos una matriz rala. 
+## No es la mejor manera de presentar los datos.
+## La forma correcta podría ser guardar los datos en formato "long".
+## Pueden haber combinaciones clásicas de hasta 4 ingredientes que funcionen.
 
 d_srep %>%
   filter(region == "EastAsian")
+
+pars <- list(supp = 0.01, target="frequent itemsets")
+
+ap_srep <- apriori(d_srep, parameter = pars)
+
+ap_srep_1 <- subset(ap_srep, size(ap_srep) == 1)
+
+sort(ap_srep_1, by="support") %>%
+  head %>%
+  DATAFRAME
+
+## Entre los más frecuentes son
+
+```
+
+```{r}
+library(tidyverse)
+
+limpiar <- function(lineas, ...){
+  str_split(lineas, ",") %>%
+    keep(~.x[1]) == ""
+}
 
 ```
 
