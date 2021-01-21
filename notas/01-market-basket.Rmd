@@ -75,13 +75,17 @@ canastas_nest$articulos[[1]]
 ```
 
 ```{r, fig.width=4, fig.asp=0.7}
+
 num_canastas <- nrow(canastas_nest)
+
 articulos_frec <- canastas_nest %>% 
     unnest(cols = articulos) %>% 
     group_by(articulos) %>%
     summarise(n  = n(), .groups = "drop") %>%
     mutate(prop = n / num_canastas) %>%
     arrange(desc(n))
+  
+
 DT::datatable(articulos_frec %>%
     mutate_if(is.numeric, ~ round(.x, 3)))
 ```
@@ -1296,14 +1300,58 @@ original [aquí](https://www.nature.com/articles/srep00196.pdf).
 
 ```{r}
 
+## Read original data
 d_srep <- read.csv("../datos/recetas/srep00196-s3.csv") 
-## Hay que notar que obtenemos una matriz rala. 
-## No es la mejor manera de presentar los datos.
-## La forma correcta podría ser guardar los datos en formato "long".
-## Pueden haber combinaciones clásicas de hasta 4 ingredientes que funcionen.
+#### Hay que notar que obtenemos una matriz rala. 
+#### No es la mejor manera de presentar los datos.
+#### La forma correcta podría ser guardar los datos en formato "long".
+#### Pueden haber combinaciones clásicas de hasta 4 ingredientes que funcionen.
 
-d_srep %>%
-  filter(region == "EastAsian")
+
+## Finding all the unique regions in the data and counting them.
+d_srep %>% 
+  group_by(region) %>%
+  summarise(n = n(), .groups = "drop") %>%
+  arrange(desc(n))
+d_srep_regs <- unique(d_srep$region)
+
+  
+## Cleaning dataframe for process
+d_srep_cln <- d_srep %>%
+  mutate(id = 1:nrow(d_srep)) %>%
+  gather(ingredient_id, ingredient, a1:X.1, factor_key = TRUE) %>%
+  arrange(id) %>%
+  filter(ingredient != "")
+
+
+## Function to count single ingredients in data.
+count_ings <- function(d_srep_cln, sel_region){
+  
+  ## Filtering for a specific region
+  if(sel_region %in% d_srep_regs){
+    d_srep_cln <- filter(d_srep_cln, region == sel_region)
+  }
+  
+  ## Counting the total number of ingredients in the filtered table.
+  n_ings <- nrow(d_srep_cln)
+  
+  ## Counting the number of ingredients for  given region.
+  d_srep_cln %>%  
+    group_by(ingredient) %>%
+    summarise(n = n(), .groups = "drop") %>%
+    mutate(prop = n/n_ings) %>%
+    arrange(desc(n))
+  
+}
+
+#### Executing created function.
+d_srep_regs
+sel_region <- "All"
+count_ings(d_srep_cln, sel_region)
+
+
+
+
 
 pars <- list(supp = 0.01, target="frequent itemsets")
 
