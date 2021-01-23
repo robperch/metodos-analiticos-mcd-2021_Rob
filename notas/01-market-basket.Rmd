@@ -1298,14 +1298,11 @@ original [aquí](https://www.nature.com/articles/srep00196.pdf).
 - Para sacar los ingredientes más frecuentes se puede hacer un melt.
   - Después se puede hacer un group by
 
+### Approaching problem with naive strategy. (Single ingredients)
 ```{r}
 
 ## Read original data
 d_srep <- read.csv("../datos/recetas/srep00196-s3.csv") 
-#### Hay que notar que obtenemos una matriz rala. 
-#### No es la mejor manera de presentar los datos.
-#### La forma correcta podría ser guardar los datos en formato "long".
-#### Pueden haber combinaciones clásicas de hasta 4 ingredientes que funcionen.
 
 
 ## Finding all the unique regions in the data and counting them.
@@ -1321,7 +1318,9 @@ d_srep_cln <- d_srep %>%
   mutate(id = 1:nrow(d_srep)) %>%
   gather(ingredient_id, ingredient, a1:X.1, factor_key = TRUE) %>%
   arrange(id) %>%
-  filter(ingredient != "")
+  filter(ingredient != "") %>%
+  select(-ingredient_id)
+d_srep_cln
 
 
 ## Function to count single ingredients in data.
@@ -1331,51 +1330,81 @@ count_ings <- function(d_srep_cln, sel_region){
   if(sel_region %in% d_srep_regs){
     d_srep_cln <- filter(d_srep_cln, region == sel_region)
   }
+  print(d_srep_cln)
   
   ## Counting the total number of ingredients in the filtered table.
   n_ings <- nrow(d_srep_cln)
+  n_recs <- length(unique(d_srep_cln$id))
   
   ## Counting the number of ingredients for  given region.
   d_srep_cln %>%  
     group_by(ingredient) %>%
     summarise(n = n(), .groups = "drop") %>%
-    mutate(prop = n/n_ings) %>%
+    mutate(
+      prop_ings = round(n/n_ings, 4),
+      support = round(n/n_recs, 4),
+      ) %>%
     arrange(desc(n))
   
 }
 
 #### Executing created function.
 d_srep_regs
-sel_region <- "All"
+sel_region <- "EastAsian"
 count_ings(d_srep_cln, sel_region)
 
 
+```
+
+### Approaching problem with apriori algorithm.
+```{r}
+
+## Importing third party libraries
+library(arules)
+library(tidyr)
+library(dplyr)
 
 
+## Function to find frequent itemsets with apriori algorithm
+count_ings_ap <- function(d_srep, sel_region, support, subsize){
+  
+  ## Filtering for a specific region
+  if(sel_region %in% d_srep_regs){
+    d_srep <- filter(d_srep, region == sel_region) %>%
+      select(-region)
+  }
+  d_srep <- as.list(data.frame(t(d_srep))) %>%
+    lapply(., function(z){ z[!is.na(z) & z != ""] })
+  print(d_srep)
+  
+  ## Applying apriori algorithm
+  pars <- list(supp = support, target="frequent itemsets")
+  ap_srep <- apriori(d_srep, parameter = pars)
 
-pars <- list(supp = 0.01, target="frequent itemsets")
+  frecs <- ap_srep %>%
+    subset(size(.) == subsize) %>%
+    sort(by = "support") %>%
+    DATAFRAME
+  print(frecs)
+  
+}
 
-ap_srep <- apriori(d_srep, parameter = pars)
-
-ap_srep_1 <- subset(ap_srep, size(ap_srep) == 1)
-
-sort(ap_srep_1, by="support") %>%
-  head %>%
-  DATAFRAME
-
-## Entre los más frecuentes son
+#### Executing created function.
+d_srep_regs
+sel_region <- "EastAsian"
+support <- 0.05
+subsize <- 1
+count_ings_ap(d_srep, sel_region, support, subsize)
 
 ```
 
 ```{r}
-library(tidyverse)
-
-limpiar <- function(lineas, ...){
-  str_split(lineas, ",") %>%
-    keep(~.x[1]) == ""
-}
-
+x$ID <- 1:nrow(x)
+x
+lst <- x %>% spread(id, ingredient) %>% select(-ID) %>% as.list()
+lapply(lst, function(z) z[!is.na(z)])
 ```
+
 
 
 2. Haz algunos experimentos el ejemplo \@ref(ejemplo-canastas) que vimos
