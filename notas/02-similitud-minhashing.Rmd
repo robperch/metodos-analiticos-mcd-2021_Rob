@@ -57,6 +57,9 @@ $$sim(A,B) = \frac{|A\cap B|}{|A\cup B|}$$
 
 ```
 
+- De aquí podemos notar que la unión siempre es más grande que la intersección. 
+- Lo importante es fijarnos en las características de la unión.
+
 Esta medida cuantifica qué tan cerca está la unión de $A$ y $B$ de su intersección. Cuanto más parecidos sean $A\cup B$ y $A\cap B$, más similares son los conjuntos. En términos geométricos, es el área de la intersección entre el área de la unión. 
 
 #### Ejercicio {-}
@@ -125,10 +128,12 @@ calcular_tejas(textos[1:2], k = 2) %>% map(unique)
 calcular_tejas(textos[1:2], k = 4) %>% map(unique)
 ```
 
+- A estas unidades fundamentales se les llama "tokens".
 
 **Observaciones**:
 
 1. Los _tokens_ son las unidades básicas de análisis. Los _tokens_ son palabras para los n-gramas (cuya definición no es del todo simple) y caracteres para las k-tejas. Podrían ser también oraciones, por ejemplo.
+
 2. Nótese que en ambos casos es posible hacer algo de preprocesamiento para
 obtener la representación. Transformaciones usuales son:
 
@@ -211,6 +216,7 @@ tejas_2 <- calcular_tejas("Robin y Batman", k = 8)
 sim_jaccard(tejas_1, tejas_2)
 ```
 
+- Aquí debemos buscar un punto medio para la longitud de la teja.
 
 
 ## Representación matricial
@@ -229,6 +235,7 @@ dtejas_tbl <- tibble(id = paste0("doc_", 1:length(textos)),
 dtejas_tbl
 ```
 
+- Para comparar cada uno de los documentos, ignoras los renglones que tienen 0's
 
 ¿Cómo calculamos la similitud de Jaccard usando estos datos?
 

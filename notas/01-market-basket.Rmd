@@ -901,6 +901,8 @@ Un punto de vista es producir una cantidad
 de reglas para procesar posteriormente con *queries*: por ejemplo, si nos interesa entender las relaciones de **berries** con otros artículos, podemos filtrar las reglas encontradas y examinarlas más
 fácilmente. 
 
+- El conjunto de canastas frecuentes es más un pre-análisis.
+
 #### Cortes estrictos en el filtrado {-}
 
 Cuando seleccionamos valores mínimos de soporte, confianza y/o lift, estas decisiones
@@ -928,7 +930,6 @@ grande de transacciones las descalificaríamos).
 a error de estimación. Los valores más grandes de lift generalmente son sobreestimaciones, por la naturaleza del análisis basado en cortes.
 - Si regresamos a incrementar soporte y confianza, potencialmente perdemos reglas interesantes.
 
-
 Veamos cómo se comportan confianza y lift para el modelo donde no hay asociaciones. 
 Utilizamos el **modelo de independencia** que explicamos arriba. 
 
@@ -939,7 +940,7 @@ todos los valores teóricos de lift son $1$*:
 
 ```{r}
 pars <- list(support=0.002, confidence = 0.0, target='rules', 
-             ext = TRUE, minlen = 2)
+             ext = TRUE, minlen = 2) ## el `ext` dice que pongas medidas extendidas. `minlen` es el número de artículos
 sims_reglas <- map(1:10, function(i){
   trans <- simular_transacciones(n_items = 169, n_trans = 10000, prob = probs_items)
   ap_random <- apriori(trans, 
@@ -957,10 +958,14 @@ plot(subset(sims_reglas[[4]], rhs %pin% 'whole milk'),
     measure=c('support','confidence'), shading = 'lift', engine = 'plotly')
 ```
 
+- Aquí podemos ver que con soportes bajos, la variabilidad es mucha.
+
 ```{r, warning=FALSE}
 plot(subset(sims_reglas[[4]], rhs %pin% 'whole milk'), 
     measure=c('support','lift'), shading = 'confidence', engine = 'plotly')
 ```
+
+- Aquí podemos ver también que con soportes bajos, la variabilidad es mucha.
 
 El valor de *confianza* y de *lift* puede ser altamente variable para reglas con soporte
 bajo. Podemos tomar dos caminos:
@@ -968,6 +973,8 @@ bajo. Podemos tomar dos caminos:
 - Cuando hagamos el soporte más bajo, incrementamos el valor de lift mínimo. Esto evita que obtengamos demasiadas reglas que no representan interacciones reales entre los artículos.
 - Podemos usar otras medidas que tomen en cuenta la variabilidad de las estimaciones. Por ejemplo, hyper-lift y hyper-confidence están basados en modelos simples (como el que vimos arriba), que filtran aquellos valores de calidad que están en las colas de las distribuciones
 de los modelos simples.
+
+  - Esto nos ayuda a filtrar justo esos resiltados ruidosos.
 
 ## Otras medidas de calidad de reglas
 
@@ -993,6 +1000,10 @@ con la cola superior de la distribución de $X_{i,j}$ bajo el supuesto
 de independencia, poniendo
 
 $$HL(I\to j) = \frac{n(\{I,j\})}{Q_\delta (X_{I,j})},$$
+
+- El cuantil entre el que divides ayuda a quitar la variabilidad.
+- La idea es muy similar a comparar con la hipótesis nula. 
+  - Queremos que podría pasar fuera de la aleatoriedad normal.
 
 donde $Q_\delta$ es tal que $P(X_{I,j} < Q_\delta (X_{I,j}))\approx \delta$.
 Tomamos por ejemplo $\delta=0.99$. De esta forma, $HL>1$ sólo cuando
@@ -1036,6 +1047,8 @@ que uno
 plot(ap_random, measure=c('lift','hyper_lift'), shading = 'support')
 ```
 
+- Estos son datos de los que esperaríamos no obtener nada ninguna relación interesante.
+
 Cortando en un valor relativamente bajo de *hyper-lift*, vemos que nos deshacemos
 correctamente de casi todas las reglas:
 
@@ -1067,8 +1080,6 @@ de soporte relativamente alto.
 ```{r}
 plot(reglas, measure=c('lift','hyper_lift'), shading = 'support')
 ```
-
-
 
 
 Si cortamos en valores que dan un número similar de reglas, por ejemplo:
@@ -1114,6 +1125,11 @@ g_soporte + g_lift +
   subtitle = "Soporte y Lift con filtro de reglas por lift vs. hyperlift")
 ```
 
+- Gráfica izquierda
+  - Tenemos en general mejores valores de soporte.
+- Gráfica de derecha
+  - Vemos que el lift no se degrada a pesar de usar corte de Hyperlift.
+
 La distribución de valores de *lift* no es tan diferente, de forma que esta
 medida de calidad no se degrada en el conjunto de reglas que encontramos:
 
@@ -1139,6 +1155,7 @@ Hay varias maneras de conducir el análisis. Dos tipos útiles son:
 nos indica potencial de interacción entre los artículos. Este análisis es
 más una reexpresión de la información contenida en los itemsets frecuentes.
 En este caso, podemos filtrar con soporte alto, para evitar estimaciones ruidosas (por ejemplo, soporte  mínimo de 300 canastas).
+  - Es como el análisis de los peces gordos.
 
 
 - *Interacciones altas*: en este enfoque donde buscamos entender nichos. Consideramos valores de soporte y confianza más bajos, pero con valores de *lift/hyper-lift* alto. Este análisis es más útil para entender, por ejemplo, propósitos de compras, convivencia de artículos, tipos de comprador, etc.
@@ -1435,7 +1452,7 @@ sel_region <- "LatinAmerican"
 n <- d_srep %>%
   filter(region == sel_region) %>%
   nrow(.)
-s <- 0.5/sqrt(n)
+s <- 1/sqrt(n)
 s <- 0.15
 
 print(n)
@@ -1556,13 +1573,13 @@ rules_graph <- function(supp=0.5/sqrt(n), conf){
 n <- d_srep %>%
   filter(region == sel_region) %>%
   nrow(.)
-supp <- 0.5/sqrt(n)
+supp <- 1/sqrt(n)
 print(n)
 print(s)
 
 sel_region <- "LatinAmerican"
 
-rules_graph(supp=0.05, conf=0.4)
+rules_graph(supp=0.06, conf=0.4)
 
 ```
 
