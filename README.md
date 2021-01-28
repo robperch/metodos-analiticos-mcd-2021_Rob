@@ -14,3 +14,4 @@ docker run --rm -p 8787:8787 -p 4040:4040 -e PASSWORD=mipass -v /tu/carpeta/loca
 - Todos los ejercicios y tareas corren también en ese contenedor. Es opcional usarlo,
 pero si tienes problemas de reproducibilidad puedes intentarlo.
 
+## Este es una linea de prueba (Rob).
