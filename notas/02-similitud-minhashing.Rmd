@@ -4,6 +4,7 @@ En la primera parte del curso tratamos un problema fundamental en varias tareas 
 
 - ¿Cómo medir similitud entre objetos o casos?
 - ¿Cómo encontrar vecinos cercanos en un conjunto de datos?
+  - Un caso podría ser querer hacer un join entre dos bases de datos con campos que no se parecen tanto.
 - ¿Cómo hacer uniones de tablas por similitud?
 
 Algunos ejemplos son:
@@ -221,6 +222,9 @@ sim_jaccard(tejas_1, tejas_2)
 
 ## Representación matricial
 
+- Esta no es una representación tan tan útil en general.
+- Esta hace más sentido si la guardamos de forma "rala", porque se hacen muy grandes.
+
 Podemos usar una matriz binaria para guardar todas las
 representaciones en k-tejas de nuestra colección de documentos. Puede usarse
 una representación rala (_sparse_) si es necesario:
@@ -256,7 +260,7 @@ mat_td <- t(dtejas_tbl %>% select(-tejas) %>% as.matrix)
 1 - dist(mat_td, method = "binary")
 ```
 
-
+- Vamos a querer ir de esta matriz enorme a otra matriz más pequeña.
 
 
 ## Minhash y reducción probabilística de dimensionalidad
@@ -299,6 +303,8 @@ apply(mat[order(perm_1), ]==1, 2, which) %>% map(min)
 apply(mat[order(perm_2), ]==1, 2, which) %>% map(min)
 ```
 
+- Con el minhash obtenemos una firma de cada documento, esta la podemos comparar y buscar firmas similares para identificar similares.
+- En lugar de guardar la tabla original, podemos guardar esta tabla de firmas que es mucho más chica.
 
 
 #### Ejemplo {-}
@@ -338,6 +344,11 @@ permutaciones <- map(1:num_perms, ~ sample.int(n = nrow(dtejas_tbl)))
 firmas_perms <- calc_firmas_perm(dtejas_tbl, permutaciones)
 firmas_perms
 ```
+
+- Aquí podemos ver las siguientes similitudes:
+  - `doc_1` & `doc_2` -> 60%
+  - `doc_1` & `doc_3` -> 0%
+  
 
 ```{r, echo = FALSE, include = FALSE}
 # para nuestro ejemplo simple
@@ -394,6 +405,10 @@ sim_jaccard(tejas_doc[[1]], tejas_doc[[3]])
 sim_jaccard(tejas_doc[[4]], tejas_doc[[3]])
 ```
 
+- Aquí podemos ver que los resultados con las firmas son muy parecidos a los resultados del algoritmo estricto de Jaccard.
+- Podemos usar lo que conocemos de estadística para calcular el error de nuestro estimador.
+$$2*\sqrt{p*(1 - p)}/\sqrt{n}$$ (o algo así)
+
 Ahora veamos qué sucede repetimos varias veces, y calculamos percentiles
 de las las cantidades obtenidas en cada repetición (50) usando
 20 permutaciones:
@@ -435,7 +450,11 @@ en la posición $k$.
 $$\frac{|A\cap B|}{|A\cup B|},$$
 que es la similitud de Jaccard de los dos documentos.
 
+- Con esto demostramos el teorema que esta reducción de dimensionalidad sí funciona.
+
 ## Cálculo de firmas por documento
+
+- Necesitamos hacer el proceso más eficiente sin hacer todas las permutaciones y demás en memoria.
 
 Podemos evitar permutar matrices (una operación costosa) de varias formas.
 Una manera de hacer esto es trabajar documento por documento, lo cual es natural para colecciones 
@@ -563,7 +582,10 @@ la forma (como se sugiere en [@mmd]):
 $$h(x) = (ax + b) \bmod 107$$
 donde escogemos $a$ al azar entre 1 y 106, y $b$ se escoge al azar
 entre $0$ y $106$. Recuerda que $A \bmod p$ es el residuo que se obtiene al dividir $A$
-entre $p$.¿Por qué es apropiada una función de este tipo?
+entre $p$.¿Por qué es apropiada una función de este tipo? 
+
+- El uso de esta función nos da una de las posibles permutaciones.
+- La unica restricción es aplicar módulo sobre un número primo.
 
 - Demuestra primero que
 la función $h(x)$ es una permutación de los enteros $\{ 0,1,\ldots, 106 \}$. Usa el
@@ -581,6 +603,8 @@ entonces $h$ mapea el rango $\{0,1,\ldots, 11\}$ a
 h <- function(x){  (4*x +1) %% 12}
 h(0:11)
 ```
+
+- Aquí vemos que esto no funciona porque se están repitiendo números.
 
 ---
 
@@ -677,6 +701,8 @@ Obtener el minhash es simplemente encontrar el mínimo entero de los valores has
 que corresponden a tejas que aparecen en cada columna.
 
 
+- Algo interesante es que si elegimos un primo muy grande, los valores se van a mapear a números diferentes (fuera del rango) pero que también funcionan.
+- Una estrategia es agarrar un número primo grande para que las cosas nada más no den lata.
 
 
 ### Funciones hash: discusión {-}
@@ -728,6 +754,8 @@ h_1("abcdef")
 h_2("abcdef")
 system.time(h_1(rep(textos, 100000)))
 ```
+- Aquí un punto importante es usar la función para intercambiar los números binarios.
+
 
 Otra opción es utilizar como función básica otra función hash estándar, como *murmur32*
 o *xxhash32* (la segunda es más rápida que la primera), que también pueden
@@ -1045,6 +1073,8 @@ pares_g <- igraph::graph_from_data_frame(pares_dis, directed = FALSE)
 wc <- igraph::cluster_label_prop(pares_g, weights = pares_g$score)
 wc
 ```
+- Con este approach ya pudimos sacar cluster de similitud, en lugar de hacer una prueba muy exigente y concentrarnos en los que se parecen más.
+
 
 ---
 
@@ -1202,3 +1232,6 @@ Veamos qué resolvimos con cada uno de los pasos, desde la conversión a tejas h
 1. Método de tejas: partes de documentos similares pueden ocurrir en distinto orden.
 2. Firmas de minhashing: Representación de documentos en tejas puede utilizar mucha memoria. Con minhashing tenemos una versión más compacta que preserva similitud
 3. LSH y cubetas: no es necesario comparar todos los pares posibles, sino solamente aquellos con firmas similares.
+
+- Dependiendo del tipo de similitud que queramos capturar, decidimos el número de hashes.
+  - Si queremos casi idénticos, haríamos solo una cubeta con muchas firmas.
