@@ -36,6 +36,17 @@ nrow(dbl)
 tendrías que hacer? Si cada tabla contuviera unos 2 millones de documentos, ¿qué tan 
 factible sería hacer todas las posibles comparaciones?
 
+```{r}
+r1 <- 2294*2616
+r1
+
+r2 <- (2294 + 2616)*(2294 + 2616 -1)/2
+r2
+```
+- Tal vez sí se podrían las comparaciones por fuerza bruta con los documentos que cargamos.
+- Si la tabla tuviera 2 millones de documentos no sería factible realizar todas las comparaciones.
+
+
 ## Tejas y hashing
 
 Vamos a poner todos los documentos en una sola lista. Aunque al final
@@ -55,6 +66,11 @@ acm_dbl <- bind_rows(acm_1, dbl_1)
 
 **Pregunta 2**: ¿por qué definimos el texto incluyendo algún espacio en blanco entre título y autor?
 ¿Qué otra estrategia se te ocurre para convertir en tejas?
+- Se agrega el espacio para poder distingir mejor las tejas entre el autor y el título del documento.
+- Otra forma podría ser hacer tejas del texto y del autor por separado. Hacer dos tipos de análisis diferentes.
+- También podríamos hacer por separado las tejas del autor y el título y al final juntar las dos tejas.
+
+
 
 ```{r}
 # función de las notas
@@ -121,6 +137,16 @@ cubetas_tbl
 **Pregunta extra (opcional)** Con *textreuse* también puedes
 hacer simplemente cubetas_tbl <- lsh(corpus, bands = 10). ¿Cómo crees
 que se calculan los identificadores de las cubetas en este caso? 
+```{r}
+lsh(corpus, bands = 10)
+```
+- Es similar al "digest" que vimos en clase.
+- Lo único que hace es tomar la cadena larga que teníamos y encriptarla.
+- La ventaja es que todo se ve más limpio. Hace más difícil que colisionen cubetas.
+
+
+
+
 
 ## Examinar pares candidatos
 
@@ -141,6 +167,9 @@ candidatos
 
 **Pregunta 4**: explica cómo se calcula la columna *score* en la tabla de candidatos,
 y da unos ejemplos.
+- Este ya hace una comparación teja por teja para determinar el valor de la similitud de Jaccard entre los pares de documentos posibles.
+
+
 
 ```{r}
 candidatos <- candidatos %>% arrange(desc(score))
@@ -157,6 +186,9 @@ corpus[["journals/sigmod/MedeirosP94"]]$content
 
 **Pregunta 5**: ¿Cuántas comparaciones tuviste qué hacer (cálculos de similitud)? Compara con el total
 de comparaciones que es posible hacer entre estas dos tablas.
+- Se hicieron 13,273 comparaciones.
+- Existen un total de 6,001,104 comparaciones posibles.
+- Se redujo mucho la cantidad de trabajo.
 
 
 Ahora eliminamos candidatos que aparecieron en la misma tabla (misma referencia bibliográfica):
@@ -173,11 +205,34 @@ candidatos_dif <- candidatos %>% filter(origen_a != origen_b)
 ¿Cuántos pares candidatos obtuviste?
 Examina algunos elementos con similitud uno o cercana a uno. ¿Se refieren al
 mismo artículo en las dos fuentes? 
+- Se obtuvieron un total de 7,376 pares.
+```{r}
+corpus[["174642"]]$content
+corpus[["journals/tods/CliffordC94"]]$content
+```
+```{r}
+corpus[["191919"]]$content
+corpus[["journals/vldb/WhiteD95"]]$content
+```
+```{r}
+corpus[["335434"]]$content
+corpus[["conf/sigmod/JagadishKS00"]]$content
+```
+- Sí, los casos analizados se refieren a la misma fuente.
+- Solamente se observan algunas diferencias en materia de mayúsculas y orden de palabras.
+
+
 
 **Pregunta 7**: 
 ¿Cuántos pares candidatos obtienes si usas 30 hashes con 5 o 30 bandas, en
 lugar de 10 bandas? Explica cuál es la desventaja de usar demasiadas
 bandas, y cuál es la desventaja de usar muy pocas bandas.
+- Con 5 bandas
+  - Se redujo a 2,560 el número de comparaciones hechas.
+  - La ventaja es que se hace más sencillo el algoritmo pero podemos perder comparaciones.
+- Con 30 bandas
+  - El número de comparaciones subió a 5,512,229.
+  - Vamos a poder identificar muchas más similitudes pero va a ser más pesado el algoritmo.
 
 
 ## Examinar resultados
@@ -185,6 +240,37 @@ bandas, y cuál es la desventaja de usar muy pocas bandas.
 **Pregunta 8**: Ahora considera los elementos 
 con similitud más baja que capturaste. Examina varios casos y concluye
 si hay pares que no se refieren al mismo artículo, y por qué.
+```{r}
+candidatos %>% filter(score > 0.4) %>% filter(score < 0.5)
+```
+
+
+```{r}
+## 0.01
+corpus[["375724"]]$content
+corpus[["conf/vldb/ZurekS99"]]$content
+```
+```{r}
+## 0.02
+corpus[["673470"]]$content
+corpus[["conf/sigmod/LacroixSC98"]]$content
+```
+```{r}
+## 0.032085561
+corpus[["872848"]]$content
+corpus[["journals/tods/DekhtyarRS01"]]$content
+```
+```{r}
+## 0.5945946
+corpus[["641273"]]$content
+corpus[["conf/vldb/VeltriCV01"]]$content
+```
+```{r}
+## 0.4932735
+corpus[["872835"]]$content
+corpus[["conf/vldb/BhattacharjeePMLCH03"]]$content
+```
+
 
 
 
@@ -194,16 +280,21 @@ observaciones de la pregunta anterior.
 ```{r}
 # código filtrando con score > tu_numero, y examinando los elementos
 # de similitud más baja
-candidatos_filt <- filter(candidatos_dif, score > )
+candidatos_filt <- filter(candidatos_dif, score > 0.6)
 tail(candidatos_filt)
 ```
 
+
+
+
+
 **Pregunta 10**: ¿cuántos pares candidatos obtuviste al final?
+- Con un punto de corte de 0.6 obtuve 2,298 candidatos.
 
 
 ## Evaluación de resultados
 
- Evalúa tus resultados con las respuestas
+Evalúa tus resultados con las respuestas
 correctas, que están en la carpeta de los datos.
 
 
@@ -233,11 +324,13 @@ puedas imaginar, ¿qué tan buenos son estos resultados? ¿Qué consideras
 mejor en este punto, tener precisión o recall alto? 
 
 ```{r}
-precision <- 
+precision <- nrow(ambos)/nrow(candidatos_filt)
 precision
-recall <- 
+recall <- nrow(ambos)/nrow(mapping)
 recall
 ```
+- Si estamos trabajando una aplicación de plagio, me interesa más enfatizar en el recall.
+- Generalmente vamos a querer tener una cobertura alta primero y después refinar el proceso.
 
 
 ## Análisis de errores
@@ -249,4 +342,12 @@ anti_join(mapping, candidatos_filt) %>% left_join(candidatos_filt)
 ```
 
 **Pregunta 11**: Considerando estos errores, ¿qué se te ocurre para mejorar el método?
+```{r}
+corpus[["conf/sigmod/BaulierBGGHJKKMMNNRSSSWW99"]]$content
+corpus[["304239"]]$content
+```
+```{r}
+corpus[["373708"]]$content
+corpus[["journals/sigmod/MotroA03"]]$content
+```
 
