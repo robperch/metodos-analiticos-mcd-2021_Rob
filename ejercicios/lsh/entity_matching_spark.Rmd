@@ -29,6 +29,12 @@ sc <- spark_connect(master = "local", config = config)
 sc$config
 ```
 
+```{markdown}
+## Rob notes
+- Podemos cambiar la configuración si queremos.
+- Podemos tener múltiples conexiones abiertas.
+```
+
 
 
 ```{r}
@@ -43,6 +49,12 @@ dbl <- spark_read_csv(sc, name = "dbl",
 # pero si los datos no son chicos esto no hay que hacerlo
 ```
 
+```{markdown}
+## Rob notes
+- Aquí ya estamos guardando las cosas en spark.
+```
+
+
 ```{r}
 head(acm)
 head(dbl)
@@ -56,12 +68,16 @@ dbl %>% tally()
 Definimos la transformación que usamos para preprocesar:
 
 ```{r}
-# no se calcula inmediatamente, solo se construye la expresión
-# de SQL
+# no se calcula inmediatamente, solo se construye la expresión de SQL
 pipeline_df <-  acm %>% 
   select(id, title, authors) %>% 
   mutate(texto = paste(title, authors, sep = "    ")) %>% 
   mutate(id = as.character(id))
+```
+
+```{markdown}
+## Rob notes
+- Estos pipelines son similares a los vistos en tidymodels.
 ```
 
 Y construimos un pipeline: preprocesamiento, tokenizer (en caracteres),
@@ -71,8 +87,7 @@ vectorizador 0-1 y finalmente cálculo de minhashes:
 ```{r}
 articulos_pipeline <- ml_pipeline(sc) %>% 
   ft_dplyr_transformer(pipeline_df) %>% 
-  ft_regex_tokenizer(input_col = "texto", output_col = "caracteres",
-    pattern = "") %>% 
+  ft_regex_tokenizer(input_col = "texto", output_col = "caracteres", pattern = "") %>% 
   ft_ngram(input_col = "caracteres", output_col = "tejas", n = 4) %>% 
   ft_count_vectorizer("tejas", 'vector_cat', binary = TRUE) %>%  
   ft_minhash_lsh("vector_cat", "hashes", seed = 1227, 
@@ -95,6 +110,12 @@ Y ahora transformamos con el pipeline las dos tablas:
 acm_lsh <- ml_transform(articulos_pipefit, acm)
 dbl_lsh <- ml_transform(articulos_pipefit, dbl)
 acm_lsh %>% head
+```
+
+```{markdown}
+## Rob notes
+- Todo esto sigue en spark.
+- No queremos traer nada grande a "R".
 ```
 
 Finalmente usamos las cubetas de LSH para hacer un join aproximado por simliitud:
