@@ -1,5 +1,24 @@
+## R
 .Rhistory
 .Rproj.user
+.RData
+*.Rproj
+
+
+## data
+datos/
+
+## MacOS
+.DS_Store
+
+
+## Netlify
 notas/.netlify
 
 
+## HTMLs
+*.html
+
+
+## Pycharm
+.idea/
