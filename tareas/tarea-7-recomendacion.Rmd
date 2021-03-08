@@ -52,6 +52,9 @@ escogemos un conjunto de usuarios y ponemos todas sus calificaciones en validaci
 
 - Debido a que se trata de datos sin temporalidad, debemos elegir un conjunto de datos al azar para desarrollar un modelo adecuado. 
 - Si simplemente hubiéramos elegido un conjunto sin azar, pudiéramos obtener una muestra no representativa de los datos.
+- En realidad sí hay un componente temporal que deberíamos cuidar. Entrenamiento debe ir con el histórico y validación hacia adelante.
+  - Podemos escoger para validación las calificaciones más reciente de un usuario.
+- También lo importante es asegurarnos de que en el conjunto de validación tengamos usuarios que no sean nuevos solamente.
 
 
 
@@ -113,6 +116,11 @@ ejemplos(28) %>% filter(num_pares > 500) %>% head(20)
 
 
 **Pregunta 2**: Escoge 2 o 3 películas que te parezcan interesantes (que tengan al menos unas 1000 evaluaciones). Por ejemplo, alguna película popular de niños, alguna serie, etc. ¿Cuáles son las 10 películas más similares según el código de arriba?
+- Nota: algo interesante es que el algoritmo no es espejo. Cuando buscas por "Lilo & Stitch", "Lilo & Stitch 2" sale con una similitud de 0.25 (aprox); cuando buscar "Lilo & Stitch 2", "Lilo & Stitch" sale con una similitud menor.
+  - El problema con esta falta de "espejo" es que no se están procesando bien los "N/A's"
+  - Para resolver esto podríamos poner un filtro para que se eliminen todos los "N/A's"
+- También, una vez vista la película 
+
 ```{r}
 ## Selección 1
 
@@ -125,7 +133,7 @@ dat_netflix %>%
   filter(peli_id==peli_id_sel) %>% 
   tally()
 
-ejemplos(peli_id_sel) %>% filter(num_pares > 500) %>% head(11)
+ejemplos(peli_id_sel) %>% filter(num_pares > 500) %>% head(11) %>% arrange(dist)
 ```
 
 
@@ -142,7 +150,7 @@ dat_netflix %>%
   filter(peli_id==peli_id_sel) %>% 
   tally()
 
-ejemplos(peli_id_sel) %>% filter(num_pares > 500) #%>% head(11)
+ejemplos(peli_id_sel) %>% filter(num_pares > 500) #%>% arrange(dist)
 ```
 
 
