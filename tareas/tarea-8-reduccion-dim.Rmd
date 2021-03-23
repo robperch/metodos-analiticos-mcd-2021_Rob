@@ -3,13 +3,21 @@ title: "Tarea 8 (reducción de dimensionalidad)"
 output: html_notebook
 ---
 
+```{r}
+library(dplyr)
+library(tidyverse)
+```
+
+
+
+
 
 1. Considera $u$ que representa valores en una dimensión para los casos ($n$)
 y un vector $v$ que representa valores asociados para las variables ($p$).
 
 ```{r}
-u <- c(0,1,2,4,5)
-v <- c(0.5,1,5)
+u <- c(0, 1, 2, 4, 5)
+v <- c(0.5, 1, 5)
 ```
 
 Si $sigma = 10$, calcula la matriz de datos $n\times p$ generada por la matriz
@@ -17,17 +25,35 @@ de rango 1  $\sigma u v^t$.
 
 ```{r}
 # completa el código
-X_1 <- 
+X_1 <- 10*tcrossprod(u, v)
 X_1
 ```
+```{r}
+## Intento usando tibbles
+# v %>% 
+#   crossing(v) %>% 
+#   mutate(afinidad = round(1*tcrossprod(u, v), 2)) %>% 
+#   spread(v, afinidad)
+```
+
 ¿Cómo describirías esta matriz de datos en términos de las columnas? ¿En términos 
 de los renglones?
+- En términos de las columnas: obtenemos los niveles generales de cada columna.
+- En términos de los renglones: 
+
+
+
+
 
 2. Si $X_1$ es la matriz que obtuviste en el inciso anterior, agrega ruido:
 ```{r}
 X <- X_1 + matrix(rnorm(15*3, 0, 0.1), 5, 3)
 X
 ```
+
+
+
+
 
 3. Recupera la dimensión que construimos en 1) usando la función *svd* (puedes intentar
 optimizando directamente si quieres):
