@@ -1448,6 +1448,8 @@ a lo largo de las categorías.
 centrar por categoría de alimento, y pensar que las observaciones son los distintos
 deciles (que en realidad son agrupaciones de observaciones).
 
+- Siempre empezamos el análisis de datos por los peces grandes, después vamos por los pequeños.
+
 
 ### Otros tipos de centrado
 
