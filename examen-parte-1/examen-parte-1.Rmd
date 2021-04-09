@@ -3,13 +3,20 @@ title: "Reducción de dimensionalidad y marginación de municipios"
 output: html_document
 ---
 
+### Librerías a usar
+```{r}
+library(readr)
+library(tidyverse)
+```
+
+
 Este ejercicio es para entregar a más tardar el 16 de abril.
 
 ## Marginación de municipios
 
 Consideremos el índice de marginación que calcula CONAPO con datos
-de censos y conteos. Este índice un resumen de varios indicadores de carencias de las
-poblaciones de los municipios que nos rankear a los municipios por nivel de marginación.
+de censos y conteos. Este índice es un resumen de varios indicadores de carencias de las
+poblaciones de los municipios que nos ayudan a rankear los municipios por nivel de marginación.
 Se utiliza frecuentemente en análisis en donde queremos incluir el contexto
 donde viven las personas, y para guiar decisiones
 de política pública.
@@ -44,11 +51,14 @@ Veamos un resumen de las variables incluidas:
 
 ```{r}
 marg_tabla <- marginacion %>% select(ANALF:PO2SM)
+
 marg_tabla %>% gather(variable, valor, ANALF:PO2SM) %>% group_by(variable) %>% 
     summarise(q10 = quantile(valor, 0.10),
               mediana = median(valor), 
               q90 = quantile(valor, 0.90)) %>% 
     arrange(desc(mediana))
+
+marg_tabla <- marg_tabla %>% as.matrix()
 ```
 
 - Buscamos primero una dimensión latente que nos da la mejor
@@ -56,21 +66,71 @@ aproximación de rango uno a la tabla de marginación.
 
 **Pregunta 1**: usando la descomposición en valores singulares, encuentra una
 aproximación de rango 1 a la tabla de municipios x 9 variables mostradas arriba
+```{r}
+## Definición de la función de costo que optimizaremos
+
+cols_d <- 1:dim(marg_tabla)[2]
+rows_d <- (dim(marg_tabla)[2] + 1) : (dim(marg_tabla)[1] + dim(marg_tabla)[2])
+
+error <- function(pars){
+  
+  v <- pars[cols_d]
+  u <- pars[rows_d]
+  
+  mean((marg_tabla - tcrossprod(u, v))^2)
+    
+}
+
+optim_decomp <- optim(rep(0.1, dim(marg_tabla)[1] + dim(marg_tabla)[2]), error, method = "BFGS")
+```
+
+```{r}
+## Reconstrucción de la matriz aproximada
+
+v_ind <- optim_decomp$par[cols_d]
+u_mun <- optim_decomp$par[rows_d]
+
+X_1 <- tcrossprod(u_mun, v_ind) %>% round(2)
+```
+
+```{r}
+## Evaluación de la aproximación
+
+R <- marg_tabla - X_1
+```
+
+
 
 **Pregunta 2**: Calcula una medida de calidad de la aproximación de rango 1. ¿Qué tan buena es?
+```{r}
 
-**Pregunta 3**: En la descomposición que hiciste, ¿Qué usaría cómo medición de marginación por municipio,
+```
+
+
+**Pregunta 3**: En la descomposición que hiciste, ¿Qué usarías cómo medición de marginación por municipio,
 los scores de los municipios o los pesos de las variables?
+```{r}
+
+```
+
 
 **Pregunta 4**: Explica cómo se construye tu medición de marginación en términos
 de la descomposición en valores singulares que obtuviste? ¿Cómo se ponderan las
 variables originales para construir tu medición de marginación?
+```{r}
+
+```
+
 
 **Pregunta 5**: Observa que variables que tienen unidades más grandes (como PL_5000, 
 porcentaje de población que vive en localidades de menos de 5000 habitantes) tienen
 más peso que otras como OVSAE (porcentaje de habitantes sin agua entubada). Argumenta
 por qué sería buena idea escalar las variables antes de hacer la descomposición en valores
 singulares.
+```{r}
+
+```
+
 
 **Pregunta 6**: Escala todas las variables para que tomen valores aproximadamente entre 0 y 1 y
 repite el análisis de descomposición en valores singulares. Compara tu nuevo índice
@@ -79,8 +139,6 @@ con la variable IM (que es el índice de marginación oficial). ¿Qué tan simil
 pesos de las variables para este nuevo índice que acabas de crear ¿cómo intepretas tu índice
 en términos de estos pesos?. Puedes usar este código
 para reescalar:
-
-
 ```{r}
 max_c <- apply(marg_tabla, 2, function(x){ quantile(x, 0.95) })
 min_c <- apply(marg_tabla, 2, min)
@@ -90,15 +148,19 @@ marg_tabla_norm <- scale(marg_tabla, center = min_c, scale = (max_c - min_c))
 
 **Pregunta 7** Verifica que puedes reconstruir el índice oficial usando el siguiente 
 escalamiento:
-
 ```{r}
 media <- apply(marg_tabla, 2, mean)
 desvest <- apply(marg_tabla, 2, sd)
 marg_tabla_norm <- scale(marg_tabla, center = media, scale = desvest)
 ```
 
+
 **Pregunta 8** Compara tus resultados de la pregunta 6 y pregunta 7. Brevemente explica
 las ventajas que le ves al análisis escalado a 0-1 de la pregunta 6 con el análisis
 de componentes principales de la pregunta 7.
+```{r}
+
+```
+
 
 
