@@ -237,6 +237,10 @@ a $v$ (tiene múltiples soluciones). Hay varias maneras de lidiar con esto (por 
 normalizando). Por el momento, corremos la optimización para encontrar una solución:
 
 ```{r}
+X_arr
+dim(X_arr)[1]
+dim(X_arr)[2]
+
 error <- function(pars){
   v <- pars[1:3]
   u <- pars[4:8]
@@ -365,12 +369,15 @@ Podríamos hacer
 ```{r}
 library(purrr)
 library(stringr)
+
 personas_larga <- personas %>% gather(dimension, u, u_1:u_2) %>%
   separate(dimension, c('x','dim'), '_') %>% select(-x)
 head(personas_larga)
+
 peliculas_larga <- peliculas %>% gather(dimension, v, v_1:v_2) %>%
   separate(dimension, c('x','dim'), '_') %>% select(-x)
 head(peliculas_larga)
+
 sigma_df <- data_frame(dim = c('1','2'), sigma = c(100,70))
 ```
 
@@ -379,8 +386,10 @@ sigma_df <- data_frame(dim = c('1','2'), sigma = c(100,70))
 df_dim <- personas_larga %>% left_join(peliculas_larga) %>%
                         left_join(sigma_df) %>%
                         mutate(afinidad = sigma*u*v)
+
 df_agg <- df_dim %>% group_by(persona, pelicula) %>%
   summarise(afinidad = round(sum(afinidad),2))
+
 df_agg %>% spread(pelicula, afinidad)
 ```
 
@@ -402,7 +411,7 @@ Sus afinidades son:
 filter(df_agg, persona==2) %>% arrange(desc(afinidad))
 ```
 
-Explicaríamos así esta descomposición: 
+Explicaríamos así esta descomposición:
 
 - Cada persona $i$ tiene un nivel de gusto por 
 ciencia ficción ($u_{1,i}$) y otro nivel de gusto por películas independientes ($u_{2,i}$).
@@ -679,8 +688,14 @@ sigma <- svd_gasto$d
 sigma
 ```
 
-Los vectores $v_1,v_2,v_3$ (pesos de las variables) en nuestras tres nuevas dimensiones, 
+Los vectores $v_1, v_2, v_3$ (pesos de las variables) en nuestras tres nuevas dimensiones, 
 que son las columnas de
+```{r}
+2.22/-0.2007
+
+data.frame(v)
+```
+
 
 ```{r}
 v <- svd_gasto$v
