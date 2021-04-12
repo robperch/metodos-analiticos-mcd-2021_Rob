@@ -52,11 +52,12 @@ Veamos un resumen de las variables incluidas:
 ```{r}
 marg_tabla <- marginacion %>% select(ANALF:PO2SM)
 
-marg_tabla %>% gather(variable, valor, ANALF:PO2SM) %>% group_by(variable) %>% 
+marg_sumary <- marg_tabla %>% gather(variable, valor, ANALF:PO2SM) %>% group_by(variable) %>% 
     summarise(q10 = quantile(valor, 0.10),
               mediana = median(valor), 
               q90 = quantile(valor, 0.90)) %>% 
     arrange(desc(mediana))
+marg_sumary
 
 marg_tabla <- marg_tabla %>% as.matrix()
 ```
@@ -66,6 +67,8 @@ aproximación de rango uno a la tabla de marginación.
 
 **Pregunta 1**: usando la descomposición en valores singulares, encuentra una
 aproximación de rango 1 a la tabla de municipios x 9 variables mostradas arriba
+
+### Metodología 1: sin 
 ```{r}
 ## Definición de la función de costo que optimizaremos
 
@@ -97,8 +100,13 @@ X_1 <- tcrossprod(u_mun, v_ind) %>% round(2)
 ## Evaluación de la aproximación
 
 R <- marg_tabla - X_1
-```
 
+qplot(
+  as.numeric(X_1),
+  as.numeric(as.matrix(marg_tabla))
+) +
+  geom_abline(color="red")
+```
 
 
 **Pregunta 2**: Calcula una medida de calidad de la aproximación de rango 1. ¿Qué tan buena es?
@@ -110,8 +118,24 @@ R <- marg_tabla - X_1
 **Pregunta 3**: En la descomposición que hiciste, ¿Qué usarías cómo medición de marginación por municipio,
 los scores de los municipios o los pesos de las variables?
 ```{r}
+## Tabla con los resultados de la descomposición para cada indicador de marginación
+res_ind <- tibble(
+  indicador = colnames(marg_tabla),
+  nivel = v_ind
+) %>% 
+  arrange(desc(nivel))
+res_ind
 
+## Tabla con los resultados de la descomposición para cada municipio
+res_mum <- tibble(
+  entidad = marginacion$NOM_ENT,
+  municipio = marginacion$NOM_MUN,
+  nivel = u_mun
+) %>% 
+  arrange(desc(nivel))
+res_mum
 ```
+- En este caso usaría los scores de los municipios como una medida de marginación debido a que la matriz $X_1$, que fue obtenida por medio de la aproximaxión a la matriz de rango 1, captura información general del nivel de marginación de cada uno de los municipios. Esto nos da una muy buena idea de su índice de marginación.
 
 
 **Pregunta 4**: Explica cómo se construye tu medición de marginación en términos
@@ -128,8 +152,10 @@ más peso que otras como OVSAE (porcentaje de habitantes sin agua entubada). Arg
 por qué sería buena idea escalar las variables antes de hacer la descomposición en valores
 singulares.
 ```{r}
-
+marg_sumary %>% 
+  left_join(res_ind, by = c("variable" = "indicador"))
 ```
+- Sería buena idea escalar las variables debido a que la diversidad de unidades puede afectar la precisión del resultado. La magnitud numérica de las variables puede afectar el peso resultante que se les da.
 
 
 **Pregunta 6**: Escala todas las variables para que tomen valores aproximadamente entre 0 y 1 y
@@ -139,6 +165,10 @@ con la variable IM (que es el índice de marginación oficial). ¿Qué tan simil
 pesos de las variables para este nuevo índice que acabas de crear ¿cómo intepretas tu índice
 en términos de estos pesos?. Puedes usar este código
 para reescalar:
+```{r}
+
+```
+
 ```{r}
 max_c <- apply(marg_tabla, 2, function(x){ quantile(x, 0.95) })
 min_c <- apply(marg_tabla, 2, min)
