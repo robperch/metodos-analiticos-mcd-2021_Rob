@@ -98,10 +98,8 @@ Consideremos una colección de textos cortos:
 
 ```{r}
 textos <- character(4)
-textos <- c("el perro persigue al gato, pero no lo alcanza", 
-            "el gato persigue al perro, pero no lo alcanza", 
-            "este es el documento de ejemplo", 
-            "el documento habla de perros, gatos, y otros animales")
+textos <- c("DIARIA", 
+            "SANDIA")
 ```
 
 Abajo mostramos la representacion en bolsa de palabras (1-gramas) y la representación en bigramas (2-gramas) de los primeros dos documentos:

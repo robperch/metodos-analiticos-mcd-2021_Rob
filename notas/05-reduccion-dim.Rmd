@@ -250,8 +250,11 @@ optim_decomp <- optim(rep(0.1, 5 + 3), error, method ='BFGS')
 ```
 
 ```{r}
-v_años <- optim_decomp$par[1:3]
 u_rubros <- optim_decomp$par[4:8]
+u_rubros
+
+v_años <- optim_decomp$par[1:3]
+v_años
 ```
 
 
@@ -268,6 +271,7 @@ Podemos ver qué tan buena es la aproximación:
 R <- X_arr - X_1
 qplot(as.numeric(X_1), as.numeric(as.matrix(X_arr))) + geom_abline(colour='red')
 round(R,2)
+norm(R, "F")
 ```
 
 
