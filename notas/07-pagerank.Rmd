@@ -1030,6 +1030,13 @@ Ahora construimos la matriz $M_1$ de este proceso. Sea $M$ la matriz original, q
 
 $$(M_1)_{i,j} = \alpha M_{ij} + (1-\alpha)\frac{1}{n}$$
 
+```{Markdown}
+## Rob notes
+- Hicimos ejercicio en excel para convertir una matriz.
+  - El resultado fue una matriz a la que le quitamos ceros.
+```
+
+
 Esto es por probabilidad total: la probabilidad de ir de $i$ a $j$ **dada** teletransportación es $1/n$, y la probabilidad de ir de $i$ a $j$ **dado** que no hubo teletransportación es $M_{ij}$ (que puede ser cero). La probabilidad total se calcula promediando estas dos probabilidades según la probabilidad de teletransportación o no.
 
 Si $i$ es un spider-trap, entonces ponemos simplemente 
