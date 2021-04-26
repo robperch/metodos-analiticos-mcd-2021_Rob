@@ -76,12 +76,17 @@ Haz una primera gráfica (checa también como colorear según una variable de no
 ```{r, fig.width = 12, fig.height=10}
 aero_grandes %>% 
     activate(nodes) %>% 
-    mutate(color_ca = ifelse(estado == "CA", "CA", "Otros")) %>% 
+    mutate(color_est = ifelse(estado == "CA", "CA", "Otros")) %>% 
+    # mutate(color_est = ifelse(estado == "NY", "NY", "Otros")) %>% 
+    # mutate(color_est = ifelse(estado == "FL", "FL", "Otros")) %>% 
+    # mutate(color_est = ifelse(estado == "MA", "MA", "Otros")) %>% 
+    # mutate(color_est = ifelse(estado == "IL", "IL", "Otros")) %>% 
     ggraph(layout = 'fr', niter = 2000) + 
-    geom_edge_link(arrow = arrow(length = unit(2, 'mm')), alpha = 0.1, colour="gray") + 
-    geom_node_point(aes(colour = color_ca)) +
+    geom_edge_link(arrow = arrow(length = unit(2, 'mm')), alpha = 0.5, colour="gray") + 
+    geom_node_point(aes(colour = color_est)) +
     theme_graph(base_family = "sans")
 ```
+
 
 
 **Pregunta 1**: cuántas componentes tiene esta gráfica (tip: haz un mutate con la función 
@@ -94,8 +99,51 @@ aero <- aero_grandes %>%
 aero %>% as_tibble %>% group_by(component) %>% tally()
 ```
 
+
+
 **Pregunta 2**: prueba otro layout: kk o graphopt, por ejemplo. ¿Puedes reconocer estructuras
 distintas? ¿Qué método parece funcionar mejor?
+
+```{r}
+aero_grandes %>% 
+  activate(nodes) %>% 
+  as_tibble() %>% 
+  group_by(name) %>% 
+  summarise(conteo = n_distinct(name)) %>% 
+  arrange(desc(conteo))
+
+aero_grandes
+  
+```
+
+
+```{r}
+## Probando con el layout "kk"
+aero_grandes %>% 
+    activate(nodes) %>% 
+    mutate(color_est = ifelse(estado == "CA", "CA", "Otros")) %>%
+    ggraph(layout = 'kk', niter = 2000) + 
+    geom_edge_link(arrow = arrow(length = unit(2, 'mm')), alpha = 0.5, colour="gray") + 
+    geom_node_point(aes(colour = color_est)) +
+    theme_graph(base_family = "sans")
+```
+
+- Este layout no provee una visualización clara de los nodos y las conexiones entre ellos.
+
+
+```{r}
+## Probando con el layout "graphopt"
+aero_grandes %>% 
+    activate(nodes) %>% 
+    mutate(color_est = ifelse(estado == "CA", "CA", "Otros")) %>%
+    ggraph(layout = 'graphopt', niter = 2000) + 
+    geom_edge_link(arrow = arrow(length = unit(2, 'mm')), alpha = 0.5, colour="gray") + 
+    geom_node_point(aes(colour = color_est)) +
+    theme_graph(base_family = "sans")
+```
+
+- Esta visualización sí da una buena idea de los nodos y sus conexiones, sin embargo, considero que el layout más adecuado para este problema es el "fr".
+
 
 
 ### Extraer componente grande
@@ -109,6 +157,7 @@ aero <- aero_grandes %>%
     filter(component == 1)
 ```
 
+
 ### Intermediación
 
 Calcula intermediación:
@@ -118,8 +167,15 @@ aero <- aero %>% activate(nodes) %>%
   mutate(intermediacion = centrality_betweenness())
 ```
 
+
+
 **Pregunta 3**: ¿cuáles son los aeropuertos con intermediación más grande? 
 (convierte el objeto de la gráfica a tibble después de activar nodos).
+
+```{r}
+
+```
+
 
 
 Ahora haz una gráfica coloreando con un estado relevante (considera tu respuesta
