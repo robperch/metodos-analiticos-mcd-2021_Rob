@@ -136,7 +136,7 @@ aero_grandes %>%
 aero_grandes %>% 
     activate(nodes) %>% 
     mutate(color_est = ifelse(estado == "CA", "CA", "Otros")) %>%
-    ggraph(layout = 'graphopt', niter = 2000) + 
+    ggraph(layout = 'graphopt', spring.constant = 0.25, charge = 0.05, niter = 300) + 
     geom_edge_link(arrow = arrow(length = unit(2, 'mm')), alpha = 0.5, colour="gray") + 
     geom_node_point(aes(colour = color_est)) +
     theme_graph(base_family = "sans")
@@ -173,9 +173,10 @@ aero <- aero %>% activate(nodes) %>%
 (convierte el objeto de la gráfica a tibble después de activar nodos).
 
 ```{r}
-
+aero %>% 
+  as_tibble() %>% 
+  arrange(desc(intermediacion))
 ```
-
 
 
 Ahora haz una gráfica coloreando con un estado relevante (considera tu respuesta
@@ -184,14 +185,20 @@ de la pregunta anterior) y usando la intermediación como tamaño:
 ```{r, fig.width = 12, fig.height=10}
 aero %>%
     activate(nodes) %>% 
-    mutate(color_edo = ifelse(estado == "TX", "TX", "Otros")) %>% 
+    mutate(color_edo = ifelse(estado == "AK", "AK", "Otros")) %>% 
     ggraph(layout = 'fr', niter=2000) + 
     geom_edge_link(arrow = arrow(length = unit(2, 'mm')), alpha = 0.1, colour="gray") + 
     geom_node_point(aes(size = intermediacion, colour=color_edo)) +
     theme_graph(base_family = "sans")
 ```
 
+
+
 **Pregunta 4** Explica el nodo con mayor intermediación de la gráfica. ¿Qué conecta?
+
+- El nodo con mayor intermeciación destaca por conectar a la red principal con las secundarias.
+- Similar al caso de "Butch" cuando analizamos el ejemplo de Pulp Fiction.
+
 
 ### Centralidad de eigenvector
 
@@ -204,9 +211,30 @@ aero <- aero %>%
     mutate(central_eigen = centrality_eigen())
 ```
 
+
 **Pregunta 5** ¿Cuáles son los aeropuertos con mayor centralidad de eigenvector?
 Contrasta con intermediación.
 
+```{r}
+## Resultados numéricos
+aero %>% 
+  as_tibble() %>% 
+  arrange(desc(central_eigen))
+```
+
+```{r}
+## Resultados gráficos
+aero %>%
+    activate(nodes) %>% 
+    mutate(color_edo = ifelse(estado == "GA", "GA", "Otros")) %>% 
+    ggraph(layout = 'fr', niter=2000) + 
+    geom_edge_link(arrow = arrow(length = unit(2, 'mm')), alpha = 0.1, colour="gray") + 
+    geom_node_point(aes(size = central_eigen, colour=color_edo)) +
+    theme_graph(base_family = "sans")
+```
+
+- Vemos que los resultados cambian mucho respecto a la métrica pasada. 
+- Ahora se priorizan los nodos más centrados en el componente principal.
 
 
 ### Examinar centralidad
@@ -214,7 +242,20 @@ Contrasta con intermediación.
 Elimina los aeropuertos de Alaska y vuelve a graficar, esta vez
 usando centralidad de eigenvector para color y tamaño.
 
+```{r}
+## Gráfica de los aeropuertos de Alaska
+aero %>%
+    activate(nodes) %>% 
+    mutate(color_edo = ifelse(estado == "AK", "AK", "Otros")) %>% 
+    ggraph(layout = 'fr', niter=2000) + 
+    geom_edge_link(arrow = arrow(length = unit(2, 'mm')), alpha = 0.1, colour="gray") + 
+    geom_node_point(aes(size = central_eigen, colour=color_edo)) +
+    theme_graph(base_family = "sans")
+```
+
+
 ```{r, fig.width = 12, fig.height=10}
+## Gráfica sin los aeropuertos de Alaska
 aero %>%
   activate(nodes) %>% 
   filter(estado!="AK") %>% 
@@ -224,11 +265,47 @@ ggraph(layout = 'graphopt', spring.constant = 0.25, charge = 0.05, niter = 300) 
   theme_graph(base_family = "sans") 
 ```
 
+- En este caso vemos que hay consistencia entre ambas métricas.
+
+
+
 **Pregunta 6**: ¿calcular centralidad y luego filtrar nodos es lo mismo que filtrar nodos
 y luego calcular centralidad?
 
+- No será lo mismo, porque la centralidad es una métrica que se calcula con base en todos los nodos. 
+- El orden de las operaciones mencionadas en la pregunta sí afectan el resultado.
+
+
+
 **Pregunta 7**: experimenta con los parámetros del layout (por ejemplo, los 2 que se usan arriba).
 ¿Cómo obtienes mejores resultados?
+
+```{r}
+## Experimento 1 -> layout "fr"
+aero %>%
+  activate(nodes) %>% 
+  filter(estado!="AK") %>% 
+ggraph(layout = 'fr', niter=2000) + 
+  geom_edge_link2(arrow = arrow(length = unit(2, 'mm')), alpha = 0.01, colour="black") + 
+  geom_node_point(aes(size = central_eigen, colour=central_eigen)) +
+  theme_graph(base_family = "sans") 
+```
+
+```{r}
+## Experimento 1 -> layout "kk"
+aero %>%
+  activate(nodes) %>% 
+  filter(estado!="AK") %>% 
+ggraph(layout = 'kk', niter=2000) + 
+  geom_edge_link2(arrow = arrow(length = unit(2, 'mm')), alpha = 0.01, colour="black") + 
+  geom_node_point(aes(size = central_eigen, colour=central_eigen)) +
+  theme_graph(base_family = "sans") 
+```
+
+- Para este caso particular, el "layout" más adecuado es el "graphopt" porque los datos se conjuntan en una red central principal.
+- Anteriormente, cuando teníamos la sección de los aeropuertos de Alaska, era mejor el layout "fr".
+
+
 
 **Pregunta 8** (más difícil): etiqueta los nodos. Etiqueta solo los nodos que tengan
 centralidad de eigenvector alta. Puedes experimentar (layout, colores, tamaño de texto)
@@ -238,7 +315,7 @@ con este código:
 aero %>%
   activate(nodes) %>% 
   filter(estado!="AK") %>% 
-ggraph(layout = 'graphopt', spring.constant = 0.25, charge = 0.05, niter = 300) + 
+  ggraph(layout = 'graphopt', spring.constant = 0.25, charge = 0.05, niter = 300) + 
   geom_edge_link2(arrow = arrow(length = unit(2, 'mm')), alpha = 0.01, colour="black") + 
   geom_node_point(aes(size = central_eigen, colour=central_eigen)) +
   geom_node_text(aes(label = name, alpha = central_eigen), repel = TRUE, size = 3, color = "black") +
