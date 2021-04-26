@@ -80,6 +80,10 @@ de aristas conectan elementos del mismo grupo**:
 
 $$\frac{1}{2}\sum_{u,v} A_{u, v} I(g(u), g(v))$$
 
+- El punto es ver el grado de modularidad para ver si podrían haber grupos.
+  - Aquí la idea es primero contar todas las aristas.
+  - Después contar solo las aristas que conectan dentro de los grupos.
+
 nótese que un elemento de esta suma es igual a 0 o 1, y solo es igual a 1 cuando $u$ y $v$ están
 conectados y $u$ y $v$ pertenecen al mismo grupo ($I(g,h)$ es la función indicadora de identidad, es decir
 vale 1 si $g=h$ y 0 en otro caso).
@@ -87,6 +91,9 @@ vale 1 si $g=h$ y 0 en otro caso).
 Entonces la fracción de aristas del total de aristas que conecta vértices dentro del mismo grupo es
 
 $$\frac{\sum_{u,v} A_{u, v} I(g(u), g(v))}{\sum_{u,v} A_{u, v}} = \frac{1}{2m}\sum_{u,v} A_{u, v} I(g(u), g(v))$$
+
+- Si este cociente es 1 entonces es una red muy cohesiva.
+  - Se pueden separar muy bien lo grupos.
 
 donde $m$ es el número de aristas. Esta cantidad va a ser grande para particiones "cohesivas", que agrupan vértices en comunidades densas y chica en otro caso. En general, esta formulación también aplica
 a *multigrafos*, en cuyo caso puede $A_{u,v}$ cuenta el número de aristas entre los nodos $u$ y $v$, y no
@@ -123,6 +130,10 @@ Cuya matriz de adyacencia $A$ es
 A <- igraph::get.adjacency(ejemplo_mod_alta)
 A
 ```
+
+- Aquí podemos ver la adyacencia obsrvando patrones de 1's juntos.
+- Esta matriz está arreglada muy bonita para mostrar el patrón.
+- En la vida real no vamos a ver el patrón tan claro, pero podemos reordenar para intentar encontrar.
 
 Nótense los bloques que se puede formar en la matriz de adyacencia (que es notable
 debido a cómo etiquetamos los nodos). Estas son las estructuras propias de una partición
@@ -172,6 +183,12 @@ Nótese que:
 
 - Redes con nodos con grados más altos naturalmente tienden a tener calificaciones de modularidad más
 altas que redes con menos aristas.
+
+- Podemos hacer algo similar a la prueba de hipótesis.
+  - Cortamos todas las aristas de los nodos.
+  - Simulamos conexiones aleatorias entre todos los nodos.
+  - Calculamos la modularidad.
+  - Comparamos este valor con la red original.
 
 Una manera de normalizar es entonces considerar la modularidad comparada con lo que esperaríamos
 si, dejando fijo número de aristas y grados de vértices, las aristas se conectaran al azar. El 
@@ -236,6 +253,8 @@ igraph::modularity(ejemplo_mod_baja, as.factor(grupos))
 **Observación**: la idea ahora es construir algoritmos para encontrar agrupaciones de modularidad
 máxima en una gráfica dada. Estas agrupaciones nos dan las comunidades si resultan tener modularidad
 alta.
+
+- Hay que tener cuidado de redes que pueden sugerir ser muy modulares pero en realidad no lo son.
 
 ## Algoritmo miope (fast greedy)
 

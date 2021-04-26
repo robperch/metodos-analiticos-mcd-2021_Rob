@@ -56,6 +56,8 @@ Propondríamos entonces como origen el texto $W^*$ que maximiza esta probabilida
 
 $$W^* = argmax_W P(W|X),$$
 
+- Notemos que hay millones de W's y millones de X's.
+
 que en principio es un máximo sobre todas las posibles frases del lenguaje.
 
 ¿Cómo construimos esta probabilidad condicional? Tenemos que
@@ -66,6 +68,9 @@ $$P(W|X) = \frac{P(X|W)P(W)}{P(X)},$$
 así que podemos escribir ($X$ es constante)
 
 $$ W^* = argmax_W P(X|W)P(W).$$
+
+- La primera parte de la ecuación es el modelo del canal (qué tanto distorsional el canal)
+- La segunda parte es la probabilidad de las frases en el lenguage.
 
 Esta forma tiene dos partes importantes:
 
