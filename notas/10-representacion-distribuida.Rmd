@@ -5,7 +5,14 @@ modelos de lenguajes y resolver tareas de NLP. Se trata de modelos de lenguaje q
 estructura, son más fáciles de regularizar y de ampliar si es necesario para incluir
 dependencias de mayor distancia. El método de conteo/suavizamiento de ngramas es simple y funciona 
 bien para algunas tareas, pero podemos construir mejores modelos con enfoques más estructurados, y con
-más capacidad para aprender aspectos más complejos del lenguaje natural. 
+más capacidad para aprender aspectos más complejos del lenguaje natural.
+
+```{markdown}
+## Rob comments
+- El éxito de las redes neuronales no solo es conectar todo con todo, es adecuarse también a la estructura de los datos.
+    - La arquitectura se adecua a problema.
+- En este caso también vamos a trabajar con arquitecturas especiales para NLP.
+```
 
 Un enfoque que recientemente se ha vuelto más importante es el de redes neuronales. Si $w=w_1w_2\cdots w_N$ es una frase, y las $w$ representan palabras, recordemos que un modelo de lenguaje con dependencia de $n$-gramas consiste de las probabilidades
 
@@ -14,6 +21,15 @@ $$P(w_t | w_{t-1} w_{t-2} \cdots w_{t-n+1}),$$
  (n=2, bigramas, n=3 trigramas, etc.)
 
 Y vimos que tenemos problemas cuando observamos sucesiones que no vimos en el corpus de entrenamiento. Este problema se puede "parchar" utilizando técnicas de suavizamiento. Aún para colecciones de entrenamiento muy grandes tenemos que lidiar con este problema.
+
+```{markdown}
+## Rob comments
+- No solo queremos aprender del corpus que tenemos.
+    - Antes teníamos que parchar para palabras que no habíamos visto.
+- Ahora queremos aprender que ciertas palabras (aunque nunca la hayamos visto) aparecen en contextos similares.
+- Necesitamos menos corpus porque aprendemos más cosas... no solo lo que vimos en el corpus.
+- Las vamos a hacer no-divisibles con este approach.
+```
 
 Podemos tomar un enfoque más estructurado pensando en representaciones "distribucionales" de palabras:
 
@@ -24,6 +40,14 @@ las representaciones vectoriales del primer paso.
 estos vectores para producir probabilidades.
 
  La idea de este modelo es entonces subsanar la relativa escasez de datos (comparado con todos los trigramas que pueden existir) con estructura. Sabemos que esta es una buena estrategia si la estrucutura impuesta es apropiada.
+ 
+```{markdown}
+## Rob comments
+- La representación distribuida es como un vector de números
+- Si ciertas palabras comparten contexto, los números de su vector se van a parecer.
+    - Es como hacer un análisis de componentes principales.
+    - Queremos reducir las dimensiones de las palabras en el vocabulario (e.g. de 200,000 a 100)
+```
 
 ```{block2, type='resumen'}
 Una de las ideas fundamentales de este enfoque es representar

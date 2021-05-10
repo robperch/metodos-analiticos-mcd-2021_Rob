@@ -1029,6 +1029,13 @@ una palabra $w$, es posible observar $x$, donde $w$ se produce como transformaci
 2. Sustitución de un caracter
 3. Transposición de dos caracteres adyacentes
 
+```{markdown}
+## Rob comments
+- Todo lo que no caiga en estas posibilidades le asignamos probabilidad de 0.
+    - Nuestro modelo no lo cubre.
+- Una mejora que podríamos aplicar es error de errores.
+```
+
 Daremos igual probabilidad a todas estas posiblidades, aunque en la realidad este modelo
 debería ser más refinado (¿cómo mejorarías este modelo?¿Con qué datos?).
 
