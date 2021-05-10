@@ -174,6 +174,7 @@ El **vocabulario** es el conjunto de todas las palabras posibles en nuestros
 textos. Lo denotaremos como $w^1, w^2, \ldots, w^N$, para un vocabulario de $N$ 
 distintas palabras o tokens.
 
+
 ## Modelos de lenguaje: n-gramas
 
 Consideremos cómo construiríamos las probabilidades $P(W)$, de manera que
@@ -207,6 +208,13 @@ P(w_n|w_1 w_2 w_3 \cdots w_{n-1})$$
 Y observamos entonces que basta con calcular las probabilidades
 condicionales de la siguiente palabra:
 $$P(w_{m+1}|w_1\cdots w_m)$$
+
+```
+## Rob notes
+- Estamos tratando de encontrar la probabilidad.
+- El orden de las palabras sí importa.
+```
+
 para cualquier conjunto de palabras $w,w_1,\ldots, w_m$. 
 
 A estas $w,w_1,\ldots, w_m$ palabras que ocurren justo antes de $w$ les
@@ -215,6 +223,13 @@ del producto, podemos ver entonces nuestro problema como uno
 de **predecir la palabra siguiente**, dado el contexto. Por ejemplo,
 si tenemos la frase "como tengo examen entonces voy a ....", la probabilidad
 de observar "estudiar" o "dormir" debe ser más alta que la de "gato".
+
+```
+## Rob notes
+- Aquí le problema es que le vamos a asignar 0 a frases que podrían ser viables.
+- Está mal asignar 0 porque sí es posible y viable.
+- También es un problema enorme para escalar el problema; puede ser imposible revisar todos los datos.
+```
 
 ```{block2, type='resumen'}
 - A una sucesión de longitud $n$ de palabras $w_1w_2\cdots w_n$ le
@@ -231,7 +246,12 @@ que la predicción será suficientemente buena si limitamos el contexto de la si
 palabra a $n$-gramas, para una $n$ relativamente chica.
 
 Por ejemplo, para **bigramas**, solo nos interesa calcular
-$$P(w_m|w_{m-2}),$$
+$$P(w_m|w_{m-1}),$$
+
+```
+## Rob notes
+- Queremos balancear la complejidad.
+```
 
 la dependencia hacia atrás contando solo la palabra anterior. Simplificaríamos la formula
 de arriba como sigue:
@@ -250,6 +270,13 @@ $$P(w_1 w_2 w_3 \cdots w_n) = P(w_1)P(w_2)P(w_3) \cdots P(w_n)$$
 
 A este modelo le llamamos el modelo de **unigramas**.
 
+```
+## Rob notes
+- Notemos que en unigramas no importa el orden.
+- En bigramas sí importa el orden.
+```
+
+
 ### Modelo generativo de n-gramas
 
 Para que estos modelos den realmente una distribución de probabilidad
@@ -260,6 +287,12 @@ la manera más común es introducir dos símbolos nuevos
 - Para inicio de frase usamos $<s>$
 - Para fin de frase usamos $</s>$
 
+```
+## Rob notes
+- Con estos símbolos sí podemos construir efectuvamente un modelo de probabilidad.
+- Con esto podemos hacer una distribución de probabilidad para tdas las frases.
+- Estamos agregando la probabilidad de que haya un final de frase.
+```
 
 
 De esta manera, el proceso de generación de frases en unigramas es el siguiente:
@@ -371,6 +404,12 @@ En este caso, usamos dos símbolos de inicio de frase $<s> <s>$ para que la fór
 
 **Observación**: los modelos de n-gramas son aproximaciones útiles, y fallan en la modelación de dependencias de larga distancia. Por ejemplo, en la frase "Tengo un gato en mi casa, y es de tipo persa" tendríamos que considerar n-gramas imprácticamente largos para modelar correctamente la ocurrencia de la palabra "persa" al final de la oración.
 
+```
+## Rob notes
+- El problema con este modelo es que tenemos una visión muy de corto plazo.
+- No se pueden modelar muchas dependencias
+```
+
 
 ## Modelo de n-gramas usando conteos
 
@@ -401,6 +440,11 @@ Considera la colección de textos "un día muy soleado",
 "un día muy lluvioso", "un ejemplo muy simple de bigramas". Estima
 las probabilidades $P(muy|<s>)$, $P(día | un)$, $P(simple | muy)$ usando
 conteos.
+
+```
+## Rob notes
+- 
+```
 
 #### Ejemplo {-}
 
