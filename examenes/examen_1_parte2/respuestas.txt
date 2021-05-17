@@ -1,0 +1,21 @@
+Nombre Completo: José Roberto Pérez Chávez
+Clave: 000173013
+1. b, c
+2. a, b, c, d
+3. e
+4. a, b
+5. c
+6. c, d
+7. b, c
+8. b, c
+9. c
+10. e
+11. a, b
+12. b
+13. a, d
+14. b, c, e
+15. b
+16. b
+17. d
+18. c, d
+

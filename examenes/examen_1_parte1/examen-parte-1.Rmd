@@ -1,0 +1,322 @@
+---
+title: "Reducción de dimensionalidad y marginación de municipios"
+output: html_document
+---
+
+### Librerías a usar
+```{r}
+library(readr)
+library(tidyverse)
+```
+
+
+Este ejercicio es para entregar a más tardar el 16 de abril.
+
+## Marginación de municipios
+
+Consideremos el índice de marginación que calcula CONAPO con datos
+de censos y conteos. Este índice es un resumen de varios indicadores de carencias de las
+poblaciones de los municipios que nos ayudan a rankear los municipios por nivel de marginación.
+Se utiliza frecuentemente en análisis en donde queremos incluir el contexto
+donde viven las personas, y para guiar decisiones
+de política pública.
+
+Por ejemplo, para 2010 tenemos los datos:
+
+```{r, message=FALSE}
+marginacion <- read_csv("./datos/imm-2010.csv")
+descrip <- read_csv("./datos/imm-2010-descrip.csv", skip = 2)
+descrip %>% knitr::kable()
+```
+
+El índice de marginación es una combinación de variables que indican
+distintos tipos de carencias para obtener un resumen o calificación general
+del grado de marginación de **cada municipio**.
+
+```{r}
+ggplot(marginacion, aes(x = IM)) + geom_histogram()
+```
+
+Por ejemplo, si promediamos los índices de marginación de los municipios dentro
+de cada estado obtenemos:
+
+```{r}
+marginacion %>% group_by(NOM_ENT) %>% summarise(marg = mean(IM), n = sum(POB_TOT)) %>% 
+    arrange(desc(marg))
+```
+
+## ¿Cómo se calcula el índice de marginación?
+
+Veamos un resumen de las variables incluidas:
+
+```{r}
+marg_tabla <- marginacion %>% select(ANALF:PO2SM)
+
+marg_sumary <- marg_tabla %>% gather(variable, valor, ANALF:PO2SM) %>% group_by(variable) %>% 
+    summarise(q10 = quantile(valor, 0.10),
+              mediana = median(valor), 
+              q90 = quantile(valor, 0.90)) %>% 
+    arrange(desc(mediana))
+marg_sumary
+
+marg_tabla_m <- marg_tabla %>% as.matrix()
+```
+
+- Buscamos primero una dimensión latente que nos da la mejor
+aproximación de rango uno a la tabla de marginación. 
+
+
+**Pregunta 1**: usando la descomposición en valores singulares, encuentra una
+aproximación de rango 1 a la tabla de municipios x 9 variables mostradas arriba
+
+```{r}
+## Definición de la función de costo que optimizaremos
+
+cols_d <- 1:dim(marg_tabla)[2]
+rows_d <- (dim(marg_tabla)[2] + 1) : (dim(marg_tabla)[1] + dim(marg_tabla)[2])
+
+error <- function(pars){
+  
+  v <- pars[cols_d]
+  u <- pars[rows_d]
+  
+  mean((marg_tabla_m - tcrossprod(u, v))^2)
+    
+}
+
+optim_decomp <- optim(rep(0.1, dim(marg_tabla)[1] + dim(marg_tabla)[2]), error, method = "BFGS")
+```
+
+```{r}
+## Reconstrucción de la matriz aproximada
+
+v_ind <- optim_decomp$par[cols_d]
+u_mun <- optim_decomp$par[rows_d]
+
+X_1 <- tcrossprod(u_mun, v_ind) %>% round(2)
+
+head(X_1)
+```
+
+
+**Pregunta 2**: Calcula una medida de calidad de la aproximación de rango 1. ¿Qué tan buena es?
+
+```{r}
+## Evaluación gráfica de la aproximación
+
+qplot(
+  as.numeric(X_1),
+  as.numeric(as.matrix(marg_tabla))
+) +
+  geom_abline(color="red")
+```
+
+```{r}
+# Evaluación de la aproximación con la norma Frobenius de R
+
+R <- marg_tabla - X_1
+head(round(R, 2))
+
+paste0("La norma Frobenius de la matriz residual es: ", round(norm(as.matrix(R), "F"), 3))
+```
+
+- En este caso podemos ver que la norma Frobenius es relativamente grande, por lo que podemos asumir que la aproximación de rango 1 a la matriz original no es muy buena.
+
+
+**Pregunta 3**: En la descomposición que hiciste, ¿Qué usarías cómo medición de marginación por municipio,
+los scores de los municipios o los pesos de las variables?
+```{r}
+## Tabla con los resultados de la descomposición para cada indicador de marginación
+res_ind <- tibble(
+  indicador = colnames(marg_tabla),
+  nivel_no_norm = v_ind
+) %>% 
+  arrange(desc(nivel_no_norm))
+res_ind
+
+## Tabla con los resultados de la descomposición para cada municipio
+res_mum <- tibble(
+  entidad = marginacion$NOM_ENT,
+  municipio = marginacion$NOM_MUN,
+  nivel_no_norm = u_mun
+) %>% 
+  arrange(desc(nivel_no_norm))
+head(res_mum)
+```
+
+- En este caso usaría los scores de los municipios como una medida de marginación debido a que la matriz $X_1$, que fue obtenida por medio de la aproximaxión a la matriz de rango 1, captura información general del nivel de marginación de cada uno de los municipios. Esto nos da una muy buena idea de su índice de marginación.
+
+
+**Pregunta 4**: Explica cómo se construye tu medición de marginación en términos
+de la descomposición en valores singulares que obtuviste? ¿Cómo se ponderan las
+variables originales para construir tu medición de marginación?
+
+- La medida de marginación obtenida fue el producto de aproximar la matriz original $X$ a al producto escalado de los vectores con norma 1 $v$ y $u$. Cada uno de estos vectores captura información general de la matriz original. En esta caso particular, el vector $v$ contiene información que compara los valores entre los indicadores de carencia (e.g. PL_5000, SPRIM, OVPT). Por otro lado, el vector $u$ contiene información útil para comparar los valores entre todos los municipios. Es por esto que el vector $u$ puede utilizarse como una aproximación del índice general de marginación relativo para todos los municipios.
+
+- En este caso, la aproximación del índice de marginación se obtiene ponderando cada uno de los valores asociacios a los distintos municipios entre todos los indicadores de carencia.
+
+
+**Pregunta 5**: Observa que variables que tienen unidades más grandes (como PL_5000, 
+porcentaje de población que vive en localidades de menos de 5000 habitantes) tienen
+más peso que otras como OVSAE (porcentaje de habitantes sin agua entubada). Argumenta
+por qué sería buena idea escalar las variables antes de hacer la descomposición en valores
+singulares.
+```{r}
+marg_sumary <- marg_sumary %>% 
+  left_join(res_ind, by = c("variable" = "indicador")) %>% 
+  arrange(desc(nivel_no_norm)) %>% 
+  cbind(rank_nivel_no_norm = 1:dim(marg_sumary)[1])
+marg_sumary
+```
+
+- Sería buena idea escalar las variables debido a que la diversidad de unidades puede afectar la precisión del resultado. La magnitud numérica de las variables puede afectar el peso resultante que se les da. Normalizar permitiría que se haga una comparación equitativa.
+
+
+**Pregunta 6**: Escala todas las variables para que tomen valores aproximadamente entre 0 y 1 y
+repite el análisis de descomposición en valores singulares. Compara tu nuevo índice
+con la variable IM (que es el índice de marginación oficial). ¿Qué tan similares son?
+(recuerda que puedes multiplicar por menos tu índice si es necesario) Muestra los nuevos
+pesos de las variables para este nuevo índice que acabas de crear ¿cómo intepretas tu índice
+en términos de estos pesos?. Puedes usar este código
+para reescalar:
+
+```{r}
+## Escalamiento de las variables
+
+max_c <- apply(marg_tabla, 2, function(x){ quantile(x, 0.95) })
+min_c <- apply(marg_tabla, 2, min)
+marg_tabla_norm <- scale(marg_tabla, center = min_c, scale = (max_c - min_c))
+```
+
+```{r}
+## Definición de la función de costo que optimizaremos
+
+cols_d <- 1:dim(marg_tabla_norm)[2]
+rows_d <- (dim(marg_tabla_norm)[2] + 1) : (dim(marg_tabla_norm)[1] + dim(marg_tabla_norm)[2])
+
+error <- function(pars){
+  
+  v <- pars[cols_d]
+  u <- pars[rows_d]
+  
+  mean((marg_tabla_norm - tcrossprod(u, v))^2)
+    
+}
+
+optim_decomp_norm <- optim(rep(0.1, dim(marg_tabla_norm)[1] + dim(marg_tabla_norm)[2]), error, method = "BFGS")
+```
+
+```{r}
+## Reconstrucción de la matriz aproximada
+
+v_ind_norm <- optim_decomp_norm$par[cols_d]
+u_mun_norm <- optim_decomp_norm$par[rows_d]
+
+X_1_norm <- tcrossprod(u_mun_norm, v_ind_norm) %>% round(2)
+```
+
+```{r}
+## Comparación del índice de marginación aproximado con el real
+res_norm_comp <- marginacion %>% 
+  select(NOM_ENT, NOM_MUN, IM) %>% 
+  cbind(u_mun_norm = u_mun_norm)
+head(res_norm_comp)
+
+## 
+qplot(
+  res_norm_comp$IM,
+  res_norm_comp$u_mun_norm
+) +
+  geom_abline(color="red") +
+  labs(y = "Índice de marginación oficial", x = "Aproximación del Índice vía DVS")
+```
+
+```{r}
+# Evaluación de la aproximación con la norma Frobenius de R
+
+R <- marginacion$IM - u_mun_norm
+head(round(R, 2))
+
+paste0("La norma Frobenius de la matriz residual es: ", round(norm(as.matrix(R), "F"), 3))
+```
+
+- Al comparar el IM oficial con la aproximación, vemos gráficamente que si hay una correlación entre ambos grupos de datos. Por otra parte, al calcular la norma Frobenius de la matriz residual, podemos ver que su valor es relativamente chico, lo cual habla de una buena aproximación.
+
+
+**Pregunta 7** Verifica que puedes reconstruir el índice oficial usando el siguiente 
+escalamiento:
+
+```{r}
+media <- apply(marg_tabla, 2, mean)
+desvest <- apply(marg_tabla, 2, sd)
+marg_tabla_norm <- scale(marg_tabla, center = media, scale = desvest)
+```
+
+```{r}
+## Definición de la función de costo que optimizaremos
+
+cols_d <- 1:dim(marg_tabla_norm)[2]
+rows_d <- (dim(marg_tabla_norm)[2] + 1) : (dim(marg_tabla_norm)[1] + dim(marg_tabla_norm)[2])
+
+error <- function(pars){
+  
+  v <- pars[cols_d]
+  u <- pars[rows_d]
+  
+  mean((marg_tabla_norm - tcrossprod(u, v))^2)
+    
+}
+
+optim_decomp_norm <- optim(rep(0.1, dim(marg_tabla_norm)[1] + dim(marg_tabla_norm)[2]), error, method = "BFGS")
+```
+
+```{r}
+## Reconstrucción de la matriz aproximada
+
+v_ind_norm <- optim_decomp_norm$par[cols_d]
+u_mun_norm <- optim_decomp_norm$par[rows_d]
+
+X_1_norm <- tcrossprod(u_mun_norm, v_ind_norm) %>% round(2)
+```
+
+```{r}
+## Factor para el ajuste
+sigma <- 1
+
+## Comparación del índice de marginación aproximado con el real
+res_norm_comp <- marginacion %>% 
+  select(NOM_ENT, NOM_MUN, IM) %>% 
+  cbind(u_mun_norm = u_mun_norm*sigma)
+head(res_norm_comp)
+
+## 
+qplot(
+  res_norm_comp$IM,
+  res_norm_comp$u_mun_norm
+) +
+  geom_abline(color="red") +
+  labs(y = "Índice de marginación oficial", x = "Aproximación del Índice vía DVS")
+```
+
+```{r}
+# Evaluación de la aproximación con la norma Frobenius de R
+
+R <- marginacion$IM - u_mun_norm
+head(round(R, 2))
+
+paste0("La norma Frobenius de la matriz residual es: ", round(norm(as.matrix(R), "F"), 3))
+```
+
+- Tanto gráficamente como numericamente, podemos ver que la aproximación al IM oficial es bastante buena.
+
+
+**Pregunta 8** Compara tus resultados de la pregunta 6 y pregunta 7. Brevemente explica
+las ventajas que le ves al análisis escalado a 0-1 de la pregunta 6 con el análisis
+de componentes principales de la pregunta 7.
+
+- Al comparar los resultados de ambas preguntas, mi conclusión es que el escalamiento aplicado en la pregunta 7 fue mucho mejor que el de la pregunta 6. Esto lo pude constatar gráfica y numericamente.
+
+- La única ventaja que vería del rescalamiento de la pregunta 6 sobre el de la pregunta 7, es que solo necesitas información de los valores más chicos y más grandes del set de datos. El rescalamiento de la pregunta 7 necesita la media y la desviación estándar. Estos últimos valores estadísticos son más difíciles de obtener.
+
+
+

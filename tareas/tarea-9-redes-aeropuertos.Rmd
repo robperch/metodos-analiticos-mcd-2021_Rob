@@ -1,0 +1,324 @@
+---
+title: "Centralidad en redes"
+output: html_notebook
+---
+
+
+### Datos
+
+En este ejemplos consideramos la red de aeropuertos de EU:
+
+```{r, message = FALSE}
+library(tidyverse)
+library(tidygraph)
+library(ggraph)
+library(igraphdata)
+data("USairports")
+# ver detalles
+# ?USairports
+```
+
+
+Nota que cada arista corresponde a una aerolínea (carrier) y tipo de avión (Aircraft), y los nodos son 
+los aeropuertos. Los datos de las aristas corresponden a vuelos de Diciembre de 2010, y
+es una gráfica dirigida.
+
+```{r}
+airports <- USairports %>% as_tbl_graph()
+airports
+```
+
+Esta gŕafica es un **multigrafo** (puede haber varias aristas con la misma dirección en un par de nodos).
+Nos interesa en primer lugar agregar a un grafo, y considerar el total de pasajeros  (puedes también
+considerar npumero de asientos, por ejemplo) que viajó
+entre cada par de aeropuertos. Podemos agregar de las siguiente forma:
+
+```{r}
+# seleccionamos solo pasajeros
+vertices <- airports %>% 
+  activate(edges) %>% 
+  select(to, from, Passengers) %>% as_tibble()
+# agregar
+vertices_agregados <- vertices %>% 
+  group_by(to, from) %>% 
+  summarise(pax = sum(Passengers))
+# nodos, y agregar estado
+nodos <- airports %>% activate(nodes) %>% 
+  as_tibble() %>% 
+  separate(City, into = c('ciudad_nombre', 'estado'), sep = ', ')
+# construir nueva red
+aeropuertos <- tbl_graph(nodes = nodos, edges = vertices_agregados) 
+aeropuertos 
+```
+
+## Filtro de conexiones débiles
+
+Podemos también filtrar opcionalmente aquellas conexiones que tengan un número de pasajeros
+bajo durante el mes de observación. La distribución de pasajeros podemos examinarla con_
+
+```{r}
+pasajeros <- aeropuertos %>% activate(edges) %>% 
+  select(from, to , pax)
+quantile(pull(pasajeros, pax), seq(0, 1, 0.1))
+```
+
+```{r}
+corte_pax <- 100
+aero_grandes <- aeropuertos %>% activate(edges) %>% 
+  filter(pax > corte_pax) %>% 
+  activate(nodes) %>% 
+  filter(!node_is_isolated()) #eliminar nodos que quedan sin conexiones
+```
+
+
+Haz una primera gráfica (checa también como colorear según una variable de nodos):
+
+```{r, fig.width = 12, fig.height=10}
+aero_grandes %>% 
+    activate(nodes) %>% 
+    mutate(color_est = ifelse(estado == "CA", "CA", "Otros")) %>% 
+    # mutate(color_est = ifelse(estado == "NY", "NY", "Otros")) %>% 
+    # mutate(color_est = ifelse(estado == "FL", "FL", "Otros")) %>% 
+    # mutate(color_est = ifelse(estado == "MA", "MA", "Otros")) %>% 
+    # mutate(color_est = ifelse(estado == "IL", "IL", "Otros")) %>% 
+    ggraph(layout = 'fr', niter = 2000) + 
+    geom_edge_link(arrow = arrow(length = unit(2, 'mm')), alpha = 0.5, colour="gray") + 
+    geom_node_point(aes(colour = color_est)) +
+    theme_graph(base_family = "sans")
+```
+
+
+
+**Pregunta 1**: cuántas componentes tiene esta gráfica (tip: haz un mutate con la función 
+*group_components*)
+
+```{r, fig.width = 12, fig.height=10}
+aero <- aero_grandes %>% 
+    activate(nodes) %>% 
+    mutate(component = group_components())
+aero %>% as_tibble %>% group_by(component) %>% tally()
+```
+
+
+
+**Pregunta 2**: prueba otro layout: kk o graphopt, por ejemplo. ¿Puedes reconocer estructuras
+distintas? ¿Qué método parece funcionar mejor?
+
+```{r}
+aero_grandes %>% 
+  activate(nodes) %>% 
+  as_tibble() %>% 
+  group_by(name) %>% 
+  summarise(conteo = n_distinct(name)) %>% 
+  arrange(desc(conteo))
+
+aero_grandes
+  
+```
+
+
+```{r}
+## Probando con el layout "kk"
+aero_grandes %>% 
+    activate(nodes) %>% 
+    mutate(color_est = ifelse(estado == "CA", "CA", "Otros")) %>%
+    ggraph(layout = 'kk', niter = 2000) + 
+    geom_edge_link(arrow = arrow(length = unit(2, 'mm')), alpha = 0.5, colour="gray") + 
+    geom_node_point(aes(colour = color_est)) +
+    theme_graph(base_family = "sans")
+```
+
+- Este layout no provee una visualización clara de los nodos y las conexiones entre ellos.
+
+
+```{r}
+## Probando con el layout "graphopt"
+aero_grandes %>% 
+    activate(nodes) %>% 
+    mutate(color_est = ifelse(estado == "CA", "CA", "Otros")) %>%
+    ggraph(layout = 'graphopt', spring.constant = 0.25, charge = 0.05, niter = 300) + 
+    geom_edge_link(arrow = arrow(length = unit(2, 'mm')), alpha = 0.5, colour="gray") + 
+    geom_node_point(aes(colour = color_est)) +
+    theme_graph(base_family = "sans")
+```
+
+- Esta visualización sí da una buena idea de los nodos y sus conexiones, sin embargo, considero que el layout más adecuado para este problema es el "fr".
+
+
+
+### Extraer componente grande
+
+Filtra la componente conexa más grande:
+
+```{r, fig.width = 12, fig.height=10}
+aero <- aero_grandes %>% 
+    activate(nodes) %>% 
+    mutate(component = group_components()) %>%
+    filter(component == 1)
+```
+
+
+### Intermediación
+
+Calcula intermediación:
+
+```{r}
+aero <- aero %>% activate(nodes) %>% 
+  mutate(intermediacion = centrality_betweenness())
+```
+
+
+
+**Pregunta 3**: ¿cuáles son los aeropuertos con intermediación más grande? 
+(convierte el objeto de la gráfica a tibble después de activar nodos).
+
+```{r}
+aero %>% 
+  as_tibble() %>% 
+  arrange(desc(intermediacion))
+```
+
+
+Ahora haz una gráfica coloreando con un estado relevante (considera tu respuesta
+de la pregunta anterior) y usando la intermediación como tamaño:
+
+```{r, fig.width = 12, fig.height=10}
+aero %>%
+    activate(nodes) %>% 
+    mutate(color_edo = ifelse(estado == "AK", "AK", "Otros")) %>% 
+    ggraph(layout = 'fr', niter=2000) + 
+    geom_edge_link(arrow = arrow(length = unit(2, 'mm')), alpha = 0.1, colour="gray") + 
+    geom_node_point(aes(size = intermediacion, colour=color_edo)) +
+    theme_graph(base_family = "sans")
+```
+
+
+
+**Pregunta 4** Explica el nodo con mayor intermediación de la gráfica. ¿Qué conecta?
+
+- El nodo con mayor intermeciación destaca por conectar a la red principal con las secundarias.
+- Similar al caso de "Butch" cuando analizamos el ejemplo de Pulp Fiction.
+
+
+### Centralidad de eigenvector
+
+Calcula centralidad de eigenvector, y ahora usa tamaño para esta centralidad y 
+color para intermediación
+
+```{r}
+aero <- aero %>%
+    activate(nodes) %>% 
+    mutate(central_eigen = centrality_eigen())
+```
+
+
+**Pregunta 5** ¿Cuáles son los aeropuertos con mayor centralidad de eigenvector?
+Contrasta con intermediación.
+
+```{r}
+## Resultados numéricos
+aero %>% 
+  as_tibble() %>% 
+  arrange(desc(central_eigen))
+```
+
+```{r}
+## Resultados gráficos
+aero %>%
+    activate(nodes) %>% 
+    mutate(color_edo = ifelse(estado == "GA", "GA", "Otros")) %>% 
+    ggraph(layout = 'fr', niter=2000) + 
+    geom_edge_link(arrow = arrow(length = unit(2, 'mm')), alpha = 0.1, colour="gray") + 
+    geom_node_point(aes(size = central_eigen, colour=color_edo)) +
+    theme_graph(base_family = "sans")
+```
+
+- Vemos que los resultados cambian mucho respecto a la métrica pasada. 
+- Ahora se priorizan los nodos más centrados en el componente principal.
+
+
+### Examinar centralidad
+
+Elimina los aeropuertos de Alaska y vuelve a graficar, esta vez
+usando centralidad de eigenvector para color y tamaño.
+
+```{r}
+## Gráfica de los aeropuertos de Alaska
+aero %>%
+    activate(nodes) %>% 
+    mutate(color_edo = ifelse(estado == "AK", "AK", "Otros")) %>% 
+    ggraph(layout = 'fr', niter=2000) + 
+    geom_edge_link(arrow = arrow(length = unit(2, 'mm')), alpha = 0.1, colour="gray") + 
+    geom_node_point(aes(size = central_eigen, colour=color_edo)) +
+    theme_graph(base_family = "sans")
+```
+
+
+```{r, fig.width = 12, fig.height=10}
+## Gráfica sin los aeropuertos de Alaska
+aero %>%
+  activate(nodes) %>% 
+  filter(estado!="AK") %>% 
+ggraph(layout = 'graphopt', spring.constant = 0.25, charge = 0.05, niter = 300) + 
+  geom_edge_link2(arrow = arrow(length = unit(2, 'mm')), alpha = 0.01, colour="black") + 
+  geom_node_point(aes(size = central_eigen, colour=central_eigen)) +
+  theme_graph(base_family = "sans") 
+```
+
+- En este caso vemos que hay consistencia entre ambas métricas.
+
+
+
+**Pregunta 6**: ¿calcular centralidad y luego filtrar nodos es lo mismo que filtrar nodos
+y luego calcular centralidad?
+
+- No será lo mismo, porque la centralidad es una métrica que se calcula con base en todos los nodos. 
+- El orden de las operaciones mencionadas en la pregunta sí afectan el resultado.
+
+
+
+**Pregunta 7**: experimenta con los parámetros del layout (por ejemplo, los 2 que se usan arriba).
+¿Cómo obtienes mejores resultados?
+
+```{r}
+## Experimento 1 -> layout "fr"
+aero %>%
+  activate(nodes) %>% 
+  filter(estado!="AK") %>% 
+ggraph(layout = 'fr', niter=2000) + 
+  geom_edge_link2(arrow = arrow(length = unit(2, 'mm')), alpha = 0.01, colour="black") + 
+  geom_node_point(aes(size = central_eigen, colour=central_eigen)) +
+  theme_graph(base_family = "sans") 
+```
+
+```{r}
+## Experimento 1 -> layout "kk"
+aero %>%
+  activate(nodes) %>% 
+  filter(estado!="AK") %>% 
+ggraph(layout = 'kk', niter=2000) + 
+  geom_edge_link2(arrow = arrow(length = unit(2, 'mm')), alpha = 0.01, colour="black") + 
+  geom_node_point(aes(size = central_eigen, colour=central_eigen)) +
+  theme_graph(base_family = "sans") 
+```
+
+- Para este caso particular, el "layout" más adecuado es el "graphopt" porque los datos se conjuntan en una red central principal.
+- Anteriormente, cuando teníamos la sección de los aeropuertos de Alaska, era mejor el layout "fr".
+
+
+
+**Pregunta 8** (más difícil): etiqueta los nodos. Etiqueta solo los nodos que tengan
+centralidad de eigenvector alta. Puedes experimentar (layout, colores, tamaño de texto)
+con este código:
+
+```{r, fig.width = 12, fig.height=10}
+aero %>%
+  activate(nodes) %>% 
+  filter(estado!="AK") %>% 
+  ggraph(layout = 'graphopt', spring.constant = 0.25, charge = 0.05, niter = 300) + 
+  geom_edge_link2(arrow = arrow(length = unit(2, 'mm')), alpha = 0.01, colour="black") + 
+  geom_node_point(aes(size = central_eigen, colour=central_eigen)) +
+  geom_node_text(aes(label = name, alpha = central_eigen), repel = TRUE, size = 3, color = "black") +
+  theme_graph() 
+```
+

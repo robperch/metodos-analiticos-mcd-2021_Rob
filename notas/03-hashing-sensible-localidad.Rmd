@@ -1,4 +1,4 @@
- Similitud: Locality sensitive hashing
+# Similitud: Locality sensitive hashing
 
 ```{r, echo=FALSE, message=FALSE}
 library(tidyverse)
@@ -86,6 +86,13 @@ r <- c(1,2,4,8)
 df_br <- tibble(r = r, b = rev(r))
 graficar_curvas(df_br) + geom_vline(xintercept = 0.7)
 ```
+```{markdown}
+## Rob comments
+- Aquí podemos ver que, entre más bandas tengamos, más fácil será sacar candidatos.
+- Está gráfica fue creada con argumentos de probabilidad, sin embargo, la distribución de las similitudes de los datos es lo que puede cambiar mucho.
+```
+
+
 
 - Con la configuración $b=1, r=8$ (un solo grupo de 8 hashes) es posible
 que no capturemos muchos pares de la similitud que nos interesa (mayor a $0.7$).
@@ -103,6 +110,10 @@ r <- c(4, 5, 8, 10, 20)
 b <- 80/r
 graficar_curvas(tibble(b, r)) + geom_vline(xintercept = 0.7) 
 ```
+```{markdown}
+## Rob comments
+- También podemos hacer varias combinaciones de hashes y bandas para filtrar al nivel que queremos.
+```
 
 ---
 
@@ -119,6 +130,11 @@ lsh_half <- function(h, b){
 }
 lsh_half(80, 16)
 ```
+```{markdown}
+## Rob comments
+- Aquí vemos que estamos capturando solo el 53% de los de similitud 0.5.
+```
+
 
 En [@mmd], se utiliza la aproximación (según la referencia, aproxima el
 punto de máxima pendiente):
@@ -163,6 +179,12 @@ combinaciones_200 <- params_umbral(200, 0.2, 0.8)
 graficar_curvas(combinaciones_200) + 
   geom_vline(xintercept = 0.2, lty=2) + 
    geom_vline(xintercept = 0.8, lty=2)
+```
+```{markdown}
+## Rob comments
+- Para elgir la estrategia adecuada, debes hacer un trade-off.
+- Necesitamos un criterio para decidir lo que vamos a hacer con los datos después.
+- A Uber le pueden quedar fraudes no detectados pero un método eficiente.
 ```
 
 **Observación**: La decisión de los valores para estos parámetros
@@ -406,7 +428,13 @@ caso, nos importa más la frecuencia relativa de los términos que su frecuencia
 
 A veces se utiliza la distancia angular (medida con un número entre 0 y 180), que se obtiene de la distancia coseno, es decir,
 $$d_a(x,y) = \theta,$$
-donde $\theta$ es tal que $\cos(\theta) = d_{cos}(x,y).$
+donde $\theta$ es tal que $\cos(\theta)  = d_{cos}(x,y).$
+```{markdown}
+## Rob comments
+- La distancia coseno es muy útil para el análisis de texto.
+- Por ejemplo, dos artículos que hablan de perros pueden tener términos muy similares pero longitudes muy diferentes (un artículo es más largo que el otro).
+- A pesar de esto, la distancia coseno puede ser chica y con eso podemos encontrar las similitudes.
+```
 
 ### Distancia de edición
 
@@ -432,6 +460,12 @@ En esta parte consideramos otras posibles familias de funciones para lograr lo m
  2. Podemos escoger al azar entre varias funciones  $f_1,\ldots,f_k$ con la propiedad anterior, de manera independiente, de forma que es posible calcular (o acotar)
  la probabilidad de $f_i(x)=f_i(y)$ .
  3. Las funciones tienen que ser relativamente fáciles de calcular (comparado con calcular todos los posibles pares y sus distancias directamente).
+ 
+```{markdown}
+## Rob comments
+- Cuando las distancias entre dos puntos es baja la probabilidad de similitud.
+- Estamos explotando de nuevo la propiedad de que la distancia Jacard es igual a la del minhash.
+```
  
  
 ## Funciones sensibles a la localidad
@@ -550,6 +584,11 @@ tener esta amplificación.
 ---
 
 ## Distancia coseno e hiperplanos aleatorios
+```{markdown}
+## Rob comments
+- Los hashes son el vector $v$ sobre el que proyectamos los vectores que queremos comparar.
+- Si caen del mismo lado del vector que escogí, entonces concluimos que son lo mismo.
+```
 
 Construimos ahora LSH para datos numéricos, y comenzaremos
 con la distancia coseno. Lo primero que necesitamos es
@@ -821,8 +860,19 @@ cuyas entradas son solamente $1$ y $-1$. El cálculo del producto
 punto es simplemente multiplicar por menos si es necesario los
 valores de los vectores $x$ y sumar.
 
+```{markdown}
+## Rob comments
+- Todo lo de arriba es lo mismo de la tarea, la única diferencia es el método de hashing que usamos.
+- Este approach es más apropiado para buscar similitud semántica, en lugar de sintáctica.
+```
 
 ## LSH para distancia euclideana.
+```{markdown}
+## Rob comments
+- Aquí se hace un vector con muchos segmentos.
+- Comparamos los segmentos en los que cae la proyección de los vectores.
+- Si caen en el mismo segmento, son vectores con mucha similitud.
+```
 
 Para distancia euclideana usamos el enfoque de proyecciones
 aleatorias en cubetas.
